@@ -12,7 +12,7 @@
 <html lang="en">
 	<head>
 		<meta charset="UTF-8">
-		<title>AgroCulture</title>
+		<title>KISAN</title>
 		<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 		<meta name="description" content="" />
 		<meta name="keywords" content="" />

@@ -36,33 +36,36 @@
 		{
 			if($picError === 0)
 			{
-				$_SESSION['productPicId'] = $_SESSION['id'];
-				$picNameNew = $productName.$_SESSION['productPicId'].".".$picActualExt ;
-				$_SESSION['productPicName'] = $picNameNew;
-				$_SESSION['productPicExt'] = $picActualExt;
-				$picDestination = "images/productimages/".$picNameNew;
-				move_uploaded_file($picTmpName, $picDestination);
-				$id = $_SESSION['id'];
+				if($picSize < 5000000){
+					$_SESSION['productPicId'] = $_SESSION['id'];
+					$picNameNew = $productName.$_SESSION['productPicId'].".".$picActualExt ;
+					$_SESSION['productPicName'] = $picNameNew;
+					$_SESSION['productPicExt'] = $picActualExt;
+					$picDestination = "productimages/".$picNameNew;
+					move_uploaded_file($picTmpName, $picDestination);
+					$id = $_SESSION['id'];
 
-				$sql = "UPDATE fproduct SET picStatus=1, pimage='$picNameNew' WHERE product='$productName';";
+					$sql = "UPDATE fproduct SET picStatus=1, pimage='$picNameNew' WHERE product='$productName';";
 
-				$result = mysqli_query($conn, $sql);
-				if($result)
-				{
+					$result = mysqli_query($conn, $sql);
+					if($result)
+					{
 
 					$_SESSION['message'] = "Product Image Uploaded successfully !!!";
 					header("Location: market.php");
-				}
-				else
-				{
+					}
+					else
+					{
 					//die("bad");
 					$_SESSION['message'] = "There was an error in uploading your product Image! Please Try again!";
 					header("Location: Login/error.php");
-				}
-			}
+					}
+			  
+				
+			    }
 			else
 			{
-				$_SESSION['message'] = "There was an error in uploading your product image! Please Try again!";
+				$_SESSION['message'] = "image size should be less then 5 mb! Please Try again!";
 				header("Location: Login/error.php");
 			}
 		}
@@ -72,6 +75,7 @@
 			header("Location: Login/error.php");
 		}
 	}
+   }
 
 	function dataFilter($data)
 	{
@@ -87,7 +91,7 @@
 <html lang="en">
 	<head>
 		<meta charset="UTF-8">
-		<title>AgroCulture</title>
+		<title>KISAN</title>
 		<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 		<meta name="description" content="" />
 		<meta name="keywords" content="" />

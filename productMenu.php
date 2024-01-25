@@ -6,7 +6,7 @@
 <html lang="en">
 	<head>
 		<meta charset="UTF-8">
-		<title>AgroCulture</title>
+		<title>KISAN</title>
 		<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 		<meta name="description" content="" />
 		<meta name="keywords" content="" />
@@ -98,7 +98,7 @@
 					<?php
 
 						while($row = $result->fetch_array()):
-							$picDestination = "images/productImages/".$row['pimage'];
+							$picDestination = "productimages/".$row['pimage'];
 						?>
 							<div class="col-md-4">
 							<section>

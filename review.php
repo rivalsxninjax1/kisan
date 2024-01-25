@@ -8,10 +8,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>AgroCulture: Product</title>
+	<title>KISAN: Product</title>
 	<meta lang="eng">
 	<meta charset="UTF-8">
-		<title>AgroCulture</title>
+		<title>KISAN</title>
 		<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 		<meta name="description" content="" />
 		<meta name="keywords" content="" />
@@ -45,7 +45,7 @@
 					$result = mysqli_query($conn, $sql);
 					$frow = mysqli_fetch_assoc($result);
 
-					$picDestination = "images/productImages/".$row['pimage'];
+					$picDestination = "images/productimages/".$row['pimage'];
 
 					?>
 				<section id="main" class="wrapper style1 align-center">
