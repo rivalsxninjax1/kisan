@@ -227,14 +227,14 @@
                                         <!-- <label for="buyer">Buyer</label> -->
                                     </div>
                                 </div>
-                                <div class="row uniform">
+                                <!-- <div class="row uniform">
                                     <div class="3u 12u$(small)">
                                         <input type="submit" value="Submit" name="submit" class="special" /></li>
                                     </div>
                                     <div class="3u 12u$(small)">
                                         <input type="reset" value="Reset" name="reset"/></li>
                                     </div>
-                                </div>
+                                </div> removed extara login and signup -->
                             </center>
                             </form>
                         </section>
