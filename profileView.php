@@ -52,8 +52,25 @@
                     <br>
                 </center>
                 </header>
-                    <div class="row">
-                        <div class="col-sm-3"></div>
+<div style="justify-content: center; flex-flow: row; display: flex;">
+    <div style="width: 20%; border-radius: 5px; justify-content: center; flex-flow: column; align-items: center; display: flex;">
+                                   <div class="3u 12u$(large)" style="padding: 5px; "> <a href="Profile/changePass.php" class="btn btn-danger" style="text-decoration: none;">Change Password</a> </div>
+                                   <div class="3u 12u$(large)" style="padding: 5px; "> <a href="profileEdit.php" class="btn btn-danger" style="text-decoration: none;">Edit Profile</a> </div>
+                                   <div class="3u 12u$(xsmall)" style="padding: 5px; "> <a href="uploadProduct.php" class="btn btn-danger" style="text-decoration: none;">Upload Product</a> </div>
+                                   <div class="3u 12u$(large)" style="padding: 5px; "> <a href="Login/logout.php" class="btn btn-danger" style="text-decoration: none;">LOG OUT</a> </div>
+    </div>
+    <div style="width: 50%;">
+                            <b><font size="+1" color="black">Email ID : </font></b>
+                            <div style="background-color: black; border-radius: 5px; padding: 5px;"><font size="+1"><?php echo $_SESSION['Email'];?></font> <br></div> 
+                            <b><font size="+1" color="black">RATINGS : </font></b>
+                            <div style="background-color: black; border-radius: 5px; padding: 5px;"><font size="+1"><?php echo $_SESSION['Rating'];?></font><br></div>
+                            <b><font size="+1" color="black">Mobile No : </font></b>
+                            <div style="background-color: black; border-radius: 5px; padding: 5px;"><font size="+1"><?php echo $_SESSION['Mobile'];?></font><br></div>
+                            <b><font size="+1" color="black">ADDRESS : </font></b>
+                            <div style="background-color: black; border-radius: 5px; padding: 5px;"><font size="+1"><?php echo $_SESSION['Addr'];?></font><br></div>
+    </div>
+</div>
+<!--removed things from here <div class="row">
                         <div class="col-sm-3">
                             <b><font size="+1" color="black">RATINGS : </font></b>
                             <font size="+1"><?php echo $_SESSION['Rating'];?></font>
@@ -95,7 +112,7 @@
                                 </div>
                             </center>
                         </div>
-                    </div>
+                    </div> to here  -->
                 </div>
             </div>
         </section>
