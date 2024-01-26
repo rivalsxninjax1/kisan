@@ -154,18 +154,18 @@
 						</blockquote>
 
 						<form method="post" action="blogView.php">
-							<div class="row">
-								<div class="6u 12u$(xsmall)">
+							<div class="row" style="align-items: center; justify-content: center; display: flex; flex-flow: column;">
+								<div class="6u 12u$(xsmall)" style="align-self: flex-start;">
 									<button class = "button special small" name="<?php echo 'like'.$id; ?>">
 									<span class="glyphicon glyphicon-thumbs-up"></span> Like</button>
 									<span><?= $row['likes']?></span>
 								</div>
-								<div class="6u 12u$(xsmall)">
+								<div class="6u 12u$(xsmall)" style="align-self: flex-start;">
 									<span class="glyphicon glyphicon-pencil"></span> Comments : <?= $numComment ?></button>
 								</div>
 								<div class="12u$">
 									<br>
-									<textarea name="comment" id="comment" rows="1" placeholder="Write a Comment!"></textarea>
+									<textarea style="resize: none;" name="comment" id="comment" rows="1" placeholder="Write a Comment!"></textarea>
 								</div>
 								<div class="12u$">
 									<center>
@@ -173,9 +173,6 @@
 									<input type="submit" name="<?php echo 'submit'.$id; ?>" class="button special small" value="Submit"/>
 									</center>
 								</div>
-							</div>
-						</form>
-
 						<?php
 							if($result1) :
 								while($row1 = $result1->fetch_array()) :
@@ -189,6 +186,9 @@
 
 							<?php endwhile; ?>
 						<?php endif; ?>
+							</div>
+						</form>
+
 					</div>
 
 					<?php endwhile; ?>

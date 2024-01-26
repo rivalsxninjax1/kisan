@@ -22,7 +22,7 @@
             <link rel="stylesheet" href="css/style.css" />
             <link rel="stylesheet" href="css/style-xlarge.css" />
         </noscript>
-        <link rel="stylesheet" href="indexfooter.css" />
+        <link rel="stylesheet" href="indexFooter.css" />
         <!--[if lte IE 8]><link rel="stylesheet" href="css/ie/v8.css" /><![endif]-->
     </head>
 
