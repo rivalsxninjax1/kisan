@@ -1,6 +1,6 @@
 # Kisan
 ----------
-***A Project based on Agriculture Sector Development *** 
+***A Project based on Agriculture Sector Development*** 
 *Made by Students of Nihareeka college* 
 
 ----------
@@ -21,5 +21,5 @@
 ----------
 
 ## TODO LIST
-[ ] fix comment resend on page refresh
-[ ] fix image problem
+- [ ] fix comment resend on page refresh
+- [ ] fix image problem
