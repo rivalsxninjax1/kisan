@@ -24,7 +24,7 @@
             echo "error";
             // echo $result->mysqli_error(); (correcteed it)
             //$_SESSION['message'] = "Sorry!<br />Order was not placed";
-            //header('Location: Login/error.php');
+            header('Location: Login/error.php');
         }
     }
 ?>
@@ -33,7 +33,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>AgroCulture: Transaction</title>
+	<title>KISAN: Transaction</title>
 	<meta lang="eng">
 	<meta charset="UTF-8">
 		<title>AgroCulture</title>

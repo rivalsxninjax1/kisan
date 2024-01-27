@@ -95,64 +95,49 @@
 
 		
 
-		<!-- Footer -->
-			<!--<footer id="footer">
-				<div class="container">
-					<div class="row">
-						<section class="4u 6u(medium) 12u$(small)">
-							<h3>Welcome to Digital market</h3>
-							
-							<ul class="alt">
-								<li><a href="#">Lorem ipsum dolor sit amet.</a></li>
-								<li><a href="#">Quod adipisci perferendis et itaque.</a></li>
-								<li><a href="#">Itaque eveniet ullam, veritatis reiciendis?</a></li>
-								<li><a href="#">Accusantium repellat accusamus a, soluta.</a></li>
-							</ul>
-						</section>
-						<section class="4u 6u$(medium) 12u$(small)">
-							<h3>Nostrum, repellat!</h3>
-							<p>Tenetur voluptate exercitationem eius tempora! Obcaecati suscipit, soluta earum blanditiis.</p>
-							<ul class="alt">
-								<li><a href="#">Lorem ipsum dolor sit amet.</a></li>
-								<li><a href="#">Id inventore, qui necessitatibus sunt.</a></li>
-								<li><a href="#">Deleniti eum odit nostrum eveniet.</a></li>
-								<li><a href="#">Illum consectetur quibusdam eos corporis.</a></li>
-							</ul>
-						</section>
-						<section class="4u$ 12u$(medium) 12u$(small)">
-							<h3>Contact Us</h3>
-							<ul class="icons">
-								<li><a href="#" class="icon rounded fa-twitter"><span class="label">Twitter</span></a></li>
-								<li><a href="#" class="icon rounded fa-facebook"><span class="label">Facebook</span></a></li>
-								<li><a href="#" class="icon rounded fa-pinterest"><span class="label">Pinterest</span></a></li>
-								<li><a href="#" class="icon rounded fa-google-plus"><span class="label">Google+</span></a></li>
-								<li><a href="#" class="icon rounded fa-linkedin"><span class="label">LinkedIn</span></a></li>
-							</ul>
-							<ul class="tabular">
-								<li>
-									<h3>Address</h3>
-									1234 Somewhere Road<br>
-									Nashville, TN 00000
-								</li>
-								<li>
-									<h3>Mail</h3>
-									<a href="#">someone@untitled.tld</a>
-								</li>
-								<li>
-									<h3>Phone</h3>
-									(000) 000-0000
-								</li>
-							</ul>
-						</section>
-					</div>
-					<ul class="copyright">
-						<li>&copy; Untitled. All rights reserved.</li>
-						<li>Design: <a href="http://templated.co">TEMPLATED</a></li>
-						<li>Images: <a href="http://unsplash.com">Unsplash</a></li>
-					</ul>
-				</div>
-			</footer>-->
+		  <!-- Footer -->
+		  <footer class="footer-distributed" style="background-color:black" id="aboutUs">
+        <center>
+            <h1 style="font: 35px calibri;">About Us</h1>
+        </center>
+        <div class="footer-left">
+            <h3 style="font-family: 'Times New Roman', cursive;">KISAN &copy; </h3>
+            <div class="logo">
+                <a href="index.php"><img src="images/logo.png" width="200px"></a>
+            </div>
+            <br />
+            <p style="font-size:20px;color:white">Your product Our market !!!</p>
+            <br />
+        </div>
 
+        <div class="footer-center">
+            <div>
+                <i class="fa fa-map-marker"></i>
+                <p style="font-size:20px">KISAN Family<span>biratnagar</span></p>
+            </div>
+            <div>
+                <i class="fa fa-phone"></i>
+                <p style="font-size:20px">+977 9742270999</p>
+            </div>
+            <div>
+                <i class="fa fa-envelope"></i>
+                <p style="font-size:20px"><a href="sabinynwa@gmail.com" style="color:white">sabin@gmail.com</a></p>
+            </div>
+        </div>
+
+        <div class="footer-right">
+            <p class="footer-company-about" style="color:white">
+                <span style="font-size:20px"><b>About KISAN</b></span>
+                KISAN  is e-commerce trading platform for farmers...
+            </p>
+            <div class="footer-icons">
+                <a  href="#"><i style="margin-left: 0;margin-top:5px;"class="fa fa-facebook"></i></a>
+                <a href="#"><i style="margin-left: 0;margin-top:5px" class="fa fa-instagram"></i></a>
+                <a href="#"><i style="margin-left: 0;margin-top:5px" class="fa fa-youtube"></i></a>
+            </div>
+        </div>
+
+    </footer>
 
 
 			<footer class="footer-distributed" style="background-color:black" id="aboutUs">

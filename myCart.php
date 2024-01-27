@@ -21,7 +21,7 @@
 <html lang="en">
 	<head>
 		<meta charset="UTF-8">
-		<title>AgroCulture: My Cart</title>
+		<title>KISAN: My JHOLA</title>
 		<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 		<meta name="description" content="" />
 		<meta name="keywords" content="" />
@@ -57,7 +57,7 @@
 		<!-- One -->
 			<section id="main" class="wrapper style1 align-center" >
 				<div class="container">
-						<h2>My Cart</h2>
+						<h2>My JHOLA</h2>
 
 				<section id="two" class="wrapper style2 align-center">
 				<div class="container">
@@ -70,7 +70,7 @@
                             $sql = "SELECT * FROM fproduct WHERE pid = '$pid'";
                             $result1 = mysqli_query($conn, $sql);
                             $row1 = $result1->fetch_array();
-							$picDestination = "images/productImages/".$row1['pimage'];
+							$picDestination = "productimages".$row1['pimage'];
 						?>
 							<div class="col-md-4">
 							<section>
@@ -79,6 +79,19 @@
 
 							<div style="align: left">
 							<blockquote><?php echo "Type : ".$row1['pcat'].'';?><br><?php echo "Price : ".$row1['price'].' /-';?><br></blockquote>
+            <!-- //changed buy to mycart -->
+							<div class="12u$">
+                            <center>
+                                <div class="row uniform">
+                                    <!-- <div class="6u 12u$(large)">
+                                        <a href="myCart.php?flag=1&pid=<?= $pid; ?>" class="btn btn-primary" style="text-decoration: none;"><span class="glyphicon glyphicon-shopping-cart"> AddToCart</a>
+                                    </div> -->
+                                    <div class="6u 12u$(large)">
+                                        <a href="buyNow.php?pid=<?= $pid; ?>" class="btn btn-primary" style="text-decoration: none;">Buy Now</a>
+                                    </div>
+                                </div>
+                            </center>
+                        </div>
 
 						</section>
 						</div>

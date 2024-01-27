@@ -36,13 +36,15 @@
 		{
 			if($picError === 0)
 			{
-				if($picSize < 5000000){
+				
 					$_SESSION['productPicId'] = $_SESSION['id'];
 					$picNameNew = $productName.$_SESSION['productPicId'].".".$picActualExt ;
 					$_SESSION['productPicName'] = $picNameNew;
 					$_SESSION['productPicExt'] = $picActualExt;
 					$picDestination = "productimages/".$picNameNew;
 					move_uploaded_file($picTmpName, $picDestination);
+         
+				
 					$id = $_SESSION['id'];
 
 					$sql = "UPDATE fproduct SET picStatus=1, pimage='$picNameNew' WHERE product='$productName';";
@@ -59,13 +61,13 @@
 					//die("bad");
 					$_SESSION['message'] = "There was an error in uploading your product Image! Please Try again!";
 					header("Location: Login/error.php");
-					}
+					} 
 			  
-				
-			    }
+			}
+			    
 			else
 			{
-				$_SESSION['message'] = "image size should be less then 5 mb! Please Try again!";
+				$_SESSION['message'] = "! Please Try again!";
 				header("Location: Login/error.php");
 			}
 		}
@@ -75,7 +77,7 @@
 			header("Location: Login/error.php");
 		}
 	}
-   }
+   
 
 	function dataFilter($data)
 	{

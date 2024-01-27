@@ -68,6 +68,11 @@
 							</div>
 							<div class="col-sm-4"></div>
 						</div>
+
+						<!-- new added code for buy option on the product menu -->
+						 <!-- <div class="6u 12u$(large)">
+                                        <a href="myCart.php?flag=1&pid=<?= $pid; ?>" class="btn btn-primary" style="text-decoration: none;"><span class="glyphicon glyphicon-shopping-cart"> AddToCart</a>
+                                    </div> -->
 						</center>
 					</form>
 				<?php endif; ?>
@@ -75,6 +80,8 @@
 				<section id="two" class="wrapper style2 align-center">
 				<div class="container">
 				<?php
+
+				
 					if(!isset($_GET['type']) OR $_GET['type'] == "all")
 					{
 					 	$sql = "SELECT * FROM fproduct WHERE 1";
@@ -91,13 +98,17 @@
 					{
 						$sql = "SELECT * FROM fproduct WHERE pcat = 'Grains'";
 					}
+
 					$result = mysqli_query($conn, $sql);
+				
 
 					?>
 					<div class="row">
 					<?php
 
 						while($row = $result->fetch_array()):
+							//updated
+							
 							$picDestination = "productimages/".$row['pimage'];
 						?>
 							<div class="col-md-4">

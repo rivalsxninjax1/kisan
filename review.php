@@ -45,7 +45,7 @@
 					$result = mysqli_query($conn, $sql);
 					$frow = mysqli_fetch_assoc($result);
 
-					$picDestination = "images/productimages/".$row['pimage'];
+					$picDestination = "productimages/".$row['pimage'];
 
 					?>
 				<section id="main" class="wrapper style1 align-center">

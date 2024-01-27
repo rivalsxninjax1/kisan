@@ -957,7 +957,7 @@
 /* Banner */
 
 	#banner {
-		background: url("images/overlay.png"), url("images/banner.jpg");
+		background: url("images/overlay.png"), url("images/last.JPG");
 		background-position: center;
 		background-repeat: no-repeat;
 		background-size: cover;
