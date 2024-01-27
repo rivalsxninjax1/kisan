@@ -3,21 +3,21 @@
 
 if ($_SERVER["REQUEST_METHOD"] == "POST")
 {
-    $name = dataFilter($_POST['name']);
-    $mobile = dataFilter($_POST['mobile']);
-    $user = dataFilter($_POST['uname']);
-    $email = dataFilter($_POST['email']);
-    $pass = dataFilter(password_hash($_POST['pass'], PASSWORD_BCRYPT));
-    $hash = dataFilter( md5( rand(0,1000) ) );
-    $cate = dataFilter($_POST['cate']);
+	$name = dataFilter($_POST['name']);
+	$mobile = dataFilter($_POST['mobile']);
+	$user = dataFilter($_POST['uname']);
+	$email = dataFilter($_POST['email']);
+	$pass =	dataFilter(password_hash($_POST['pass'], PASSWORD_BCRYPT));
+	$hash = dataFilter( md5( rand(0,1000) ) );
+	$category = dataFilter($_POST['category']);
     $addr = dataFilter($_POST['addr']);
 
-    $_SESSION['Email'] = $email;
+	$_SESSION['Email'] = $email;
     $_SESSION['Name'] = $name;
     $_SESSION['Password'] = $pass;
     $_SESSION['Username'] = $user;
     $_SESSION['Mobile'] = $mobile;
-    $_SESSION['cate'] = $cate;
+    $_SESSION['Category'] = $category;
     $_SESSION['Hash'] = $hash;
     $_SESSION['Addr'] = $addr;
     $_SESSION['Rating'] = 0;
@@ -30,12 +30,12 @@ $length = strlen($mobile);
 
 if($length != 10)
 {
-    $_SESSION['message'] = "Invalid Mobile Number !!!";
-    header("location: error.php");
-    die();
+	$_SESSION['message'] = "Invalid Mobile Number !!!";
+	header("location: error.php");
+	die();
 }
 
-if($cate == "Farmer")
+if($category == "Farmer")
 {
     $sql = "SELECT * FROM farmer WHERE femail='$email'";
 
@@ -49,16 +49,16 @@ if($cate == "Farmer")
     }
     else
     {
-        $sql = "INSERT INTO farmer (fname, fusername, fpassword, fhash, fmobile, femail, faddress)
-                VALUES ('$name','$user','$pass','$hash','$mobile','$email','$addr')";
+    	$sql = "INSERT INTO farmer (fname, fusername, fpassword, fhash, fmobile, femail, faddress)
+    			VALUES ('$name','$user','$pass','$hash','$mobile','$email','$addr')";
 
-        if (mysqli_query($conn, $sql))
-        {
-            $_SESSION['Active'] = 0;
+    	if (mysqli_query($conn, $sql))
+    	{
+    	    $_SESSION['Active'] = 0;
             $_SESSION['logged_in'] = true;
 
             $_SESSION['picStatus'] = 0;
-            $_SESSION['picExt'] = 0; //png
+            $_SESSION['picExt'] = 0;
 
             $sql = "SELECT * FROM farmer WHERE fusername='$user'";
             $result = mysqli_query($conn, $sql);
@@ -77,6 +77,7 @@ if($cate == "Farmer")
             }
 
             $_SESSION['message'] =
+
                      "Confirmation link has been sent to $email, please verify
                      your account by clicking on the link in the message!";
 
@@ -91,17 +92,16 @@ if($cate == "Farmer")
 
             http://localhost/kissan/Login/verify.php?email=".$email."&hash=".$hash;
 
-            // $check = mail( $to, $subject, $message_body );
-       
+            //$check = mail( $to, $subject, $message_body );
 
             header("location: profile.php");
-        }
-        else
-        {
-            //echo "Error: " . $sql . "<br>" . mysqli_error($conn);
-            $_SESSION['message'] = "Registration failed!";
+    	}
+    	else
+    	{
+    	    //echo "Error: " . $sql . "<br>" . mysqli_error($conn);
+    	    $_SESSION['message'] = "Registration failed!";
             header("location: error.php");
-        }
+    	}
     }
 }
 
@@ -119,12 +119,12 @@ else
     }
     else
     {
-        $sql = "INSERT INTO buyer (bname, busername, bpassword, bhash, bmobile, bemail, baddress)
-                VALUES ('$name','$user','$pass','$hash','$mobile','$email','$addr')";
+    	$sql = "INSERT INTO buyer (bname, busername, bpassword, bhash, bmobile, bemail, baddress)
+    			VALUES ('$name','$user','$pass','$hash','$mobile','$email','$addr')";
 
-        if (mysqli_query($conn, $sql))
-        {
-            $_SESSION['Active'] = 0;
+    	if (mysqli_query($conn, $sql))
+    	{
+    	    $_SESSION['Active'] = 0;
             $_SESSION['logged_in'] = true;
 
             $sql = "SELECT * FROM buyer WHERE busername='$user'";
@@ -138,7 +138,7 @@ else
                      your account by clicking on the link in the message!";
 
             $to      = $email;
-            $subject = "Account Verification";
+            $subject = "Account Verification ( ArtCircle.com )";
             $message_body = "
             Hello '.$user.',
 
@@ -151,22 +151,22 @@ else
             //$check = mail( $to, $subject, $message_body );
 
             header("location: profile.php");
-        }
-        else
-        {
-            //echo "Error: " . $sql . "<br>" . mysqli_error($conn);
-            $_SESSION['message'] = "Registration not successfull!";
+    	}
+    	else
+    	{
+    	    //echo "Error: " . $sql . "<br>" . mysqli_error($conn);
+    	    $_SESSION['message'] = "Registration not successfull!";
             header("location: error.php");
-        }
+    	}
     }
 }
 
 function dataFilter($data)
 {
-    $data = trim($data);
-    $data = stripslashes($data);
-    $data = htmlspecialchars($data);
-    return $data;
+	$data = trim($data);
+ 	$data = stripslashes($data);
+	$data = htmlspecialchars($data);
+  	return $data;
 }
 
 ?>
