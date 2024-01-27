@@ -11,8 +11,7 @@
             $picTmpName = $pic['tmp_name'];
             $picSize = $pic['size'];
             $picError = $pic['error'];
-            $p
-            icType = $pic['type'];
+            $picType = $pic['type'];
 
             $picExt = explode('.', $picName);
             $picActualExt = strtolower(end($picExt));
