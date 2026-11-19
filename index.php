@@ -1,272 +1,133 @@
-<?php session_start(); ?>
+<?php
+require __DIR__ . '/includes/bootstrap.php';
 
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <title>KISAN</title>
-        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-        <meta name="description" content="" />
-        <meta name="keywords" content="" />
-        <link href="bootstrap\css\bootstrap.min.css" rel="stylesheet">
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-        <script src="bootstrap\js\bootstrap.min.js"></script>
-        
-        <link rel="stylesheet" href="login.css"/>
-        <script src="js/jquery.min.js"></script>
-        <script src="js/skel.min.js"></script>
-        <script src="js/skel-layers.min.js"></script>
-        <script src="js/init.js"></script>
-        <noscript>
-            <link rel="stylesheet" href="css/skel.css" />
-            <link rel="stylesheet" href="css/style.css" />
-            <link rel="stylesheet" href="css/style-xlarge.css" />
-        </noscript>
-        <link rel="stylesheet" href="indexFooter.css" />
-        <!--[if lte IE 8]><link rel="stylesheet" href="css/ie/v8.css" /><![endif]-->
-    </head>
+$featured = db_all(
+    'SELECT p.pid, p.product, p.pcat, p.price, p.unit, p.pimage, f.fname
+       FROM fproduct p
+       JOIN farmer f ON f.fid = p.fid
+   ORDER BY p.pid DESC
+      LIMIT 6'
+);
 
-    <?php
-        require 'menu.php';
-    ?>
+$pageTitle = 'Fresh from the farm, straight to you';
+$active    = 'home';
+require __DIR__ . '/includes/header.php';
+?>
 
-        <!-- Banner -->
-            <section id="banner" class="wrapper">
-                <div class="container">
-                <h2>KISAN</h2>
-                <p>Your Product Your Value</p>
-                <br><br>
-                <center>
-                    <div class="row uniform">
-                        <div class="6u 12u$(xsmall)">
-                            <button class="button fit" onclick="document.getElementById('id01').style.display='block'" style="width:auto">LOGIN</button>
-                        </div>
+<section class="hero">
+    <div class="wrap">
+        <p class="eyebrow">Your product &middot; Your value</p>
+        <h1>Fresh from the field, <em>straight to your table.</em></h1>
+        <p class="lead">KISAN is a digital marketplace that connects farmers directly with buyers: fair prices for the people who grow our food, and fresh local produce for everyone else.</p>
 
-                        <div class="6u 12u$(xsmall)">
-                            <button class="button fit" onclick="document.getElementById('id02').style.display='block'" style="width:auto">REGISTER</button>
-                        </div>
-                    </div>
-                </center>
-
-
-            </section>
-
-        <!-- One -->
-            <section id="one" class="wrapper style1 align-center">
-                <div class="container">
-                    <header>
-                        <h2>KISAN</h2>
-                        <p>Explore the new way of trading...</p>
-                    </header>
-                    <div class="row 200%">
-                        <section class="4u 12u$(small)">
-                            <i class="icon big rounded fa-clock-o"></i>
-                            <p>Digital Market</p>
-                        </section>
-                        <section class="4u 12u$(small)">
-                            <i class="icon big rounded fa-comments"></i>
-                            <p>KISAN-Blog</p>
-                        </section>
-                        <section class="4u$ 12u$(small)">
-                            <i class="icon big rounded fa-user"></i>
-                            <p>Register </p>
-                        </section>
-                    </div>
-                </div>
-            </section>
-
-
-        <!-- Footer -->
-        <footer class="footer-distributed" style="background-color:black" id="aboutUs">
-        <center>
-            <h1 style="font: 35px calibri;">About Us</h1>
-        </center>
-        <div class="footer-left">
-            <h3 style="font-family: 'Times New Roman', cursive;">KISAN &copy; </h3>
-            <div class="logo">
-                <a href="index.php"><img src="images/logo.png" width="200px"></a>
-            </div>
-            <br />
-            <p style="font-size:20px;color:white">Your product Our market !!!</p>
-            <br />
+        <div class="hero-actions">
+            <a class="btn btn-accent btn-lg" href="market.php"><i class="fa fa-leaf" aria-hidden="true"></i> Browse the Bazar</a>
+            <?php if (!is_logged_in()): ?>
+                <a class="btn btn-light btn-lg" href="register.php?role=farmer">Sell as a farmer</a>
+            <?php elseif (is_farmer()): ?>
+                <a class="btn btn-light btn-lg" href="uploadProduct.php">List a product</a>
+            <?php else: ?>
+                <a class="btn btn-light btn-lg" href="myCart.php">Open my Jhola</a>
+            <?php endif; ?>
         </div>
 
-        <div class="footer-center">
-            <div>
-                <i class="fa fa-map-marker"></i>
-                <p style="font-size:20px">KISAN Family<span>biratnagar</span></p>
+        <ul class="hero-points">
+            <li><i class="fa fa-check-circle" aria-hidden="true"></i> Direct from farmers</li>
+            <li><i class="fa fa-check-circle" aria-hidden="true"></i> Fresh, local produce</li>
+            <li><i class="fa fa-check-circle" aria-hidden="true"></i> Simple ordering</li>
+        </ul>
+    </div>
+</section>
+
+<section class="section">
+    <div class="wrap">
+        <div class="section-head">
+            <h2>Explore the new way of trading</h2>
+            <p>Everything farmers and buyers need, in one friendly place.</p>
+        </div>
+        <div class="feature-grid">
+            <article class="feature">
+                <span class="feature-icon"><i class="fa fa-shopping-cart" aria-hidden="true"></i></span>
+                <h3>Digital Bazar</h3>
+                <p>Browse fruit, vegetables and grains listed by farmers, with clear prices and photos.</p>
+            </article>
+            <article class="feature">
+                <span class="feature-icon"><i class="fa fa-comments-o" aria-hidden="true"></i></span>
+                <h3>KISAN Blog</h3>
+                <p>Share farming tips, seasonal advice and stories with the rest of the community.</p>
+            </article>
+            <article class="feature">
+                <span class="feature-icon"><i class="fa fa-exchange" aria-hidden="true"></i></span>
+                <h3>Direct trade</h3>
+                <p>Farmers set their own prices and buyers order straight from the source.</p>
+            </article>
+        </div>
+    </div>
+</section>
+
+<section class="section section-alt">
+    <div class="wrap">
+        <div class="section-head">
+            <h2>How it works</h2>
+            <p>Three simple steps from field to doorstep.</p>
+        </div>
+        <ol class="steps">
+            <li>
+                <h3>Create an account</h3>
+                <p>Join as a farmer to sell, or as a buyer to shop.</p>
+            </li>
+            <li>
+                <h3>List or browse</h3>
+                <p>Farmers add products with a photo and price. Buyers fill their Jhola.</p>
+            </li>
+            <li>
+                <h3>Order and receive</h3>
+                <p>Place an order and the farmer gets your details to arrange delivery.</p>
+            </li>
+        </ol>
+    </div>
+</section>
+
+<section class="section">
+    <div class="wrap">
+        <div class="row-between" style="margin-bottom:2rem">
+            <div class="section-head">
+                <h2>Fresh on the Bazar</h2>
+                <p>The newest listings from our farmers.</p>
             </div>
-            <div>
-                <i class="fa fa-phone"></i>
-                <p style="font-size:20px">+977 9742270999</p>
-            </div>
-            <div>
-                <i class="fa fa-envelope"></i>
-                <p style="font-size:20px"><a href="sabinynwa@gmail.com" style="color:white">sabin@gmail.com</a></p>
-            </div>
+            <a class="btn btn-ghost" href="market.php">View all products <i class="fa fa-arrow-right" aria-hidden="true"></i></a>
         </div>
 
-        <div class="footer-right">
-            <p class="footer-company-about" style="color:white">
-                <span style="font-size:20px"><b>About KISAN</b></span>
-                KISAN  is e-commerce trading platform for farmers...
-            </p>
-            <div class="footer-icons">
-                <a  href="#"><i style="margin-left: 0;margin-top:5px;"class="fa fa-facebook"></i></a>
-                <a href="#"><i style="margin-left: 0;margin-top:5px" class="fa fa-instagram"></i></a>
-                <a href="#"><i style="margin-left: 0;margin-top:5px" class="fa fa-youtube"></i></a>
+        <?php if ($featured): ?>
+            <div class="grid">
+                <?php foreach ($featured as $p): ?>
+                    <?= product_card($p) ?>
+                <?php endforeach; ?>
             </div>
+        <?php else: ?>
+            <div class="empty">
+                <i class="fa fa-leaf" aria-hidden="true"></i>
+                <h3>No products yet</h3>
+                <p>Farmers can list the first product in just a minute.</p>
+                <a class="btn btn-primary" href="<?= is_farmer() ? 'uploadProduct.php' : 'register.php?role=farmer' ?>">Become a seller</a>
+            </div>
+        <?php endif; ?>
+    </div>
+</section>
+
+<?php if (!is_logged_in()): ?>
+<section class="cta-band">
+    <div class="wrap cta-inner">
+        <div>
+            <h2>Ready to join the KISAN family?</h2>
+            <p>Create a free account in under a minute and start trading.</p>
         </div>
-
-    </footer>
-
-
-            <div id="id01" class="modal">
-
-  <form class="modal-content animate" action="Login/login.php" method='POST'>
-    <div class="imgcontainer">
-      <span onclick="document.getElementById('id01').style.display='none'" class="close" title="Close Modal">&times;</span>
+        <div class="hero-actions">
+            <a class="btn btn-accent btn-lg" href="register.php">Create an account</a>
+            <a class="btn btn-light btn-lg" href="login.php">Log in</a>
+        </div>
     </div>
+</section>
+<?php endif; ?>
 
-    <div class="container">
-    <h3>Login</h3>
-                            <form method="post" action="Login/login.php">
-                                <div class="row uniform 50%">
-                                    <div class="7u$">
-                                        <input type="text" name="uname" id="uname" value="" placeholder="UserName" style="width:80%" required/>
-                                    </div>
-                                    <div class="7u$">
-                                        <input type="password" name="pass" id="pass" value="" placeholder="Password" style="width:80%" required/>
-                                    </div>
-                                </div>
-                                    <div class="row uniform">
-                                        <p>
-                                            <b>LOGIN As: </b>
-                                        </p>
-                                        <div class="3u 12u$(small)">
-                                            <input type="radio" id="farmer" name="category" value="1">
-                                            <label for="farmer">Farmer</label>
-                                        </div>
-                                        <div class="3u 12u$(small)">
-                                            <input type="radio" id="buyer" name="category" value="0">
-                                            <label for="buyer">Buyer</label>
-                                        </div>
-                                    </div>
-                                    <center>
-                                    <div class="row uniform">
-                                        <div class="7u 12u$(small)">
-                                            <input type="submit" value="Login" />
-                                        </div>
-                                    </div>
-                                    </center>
-                                </div>
-                            </form>
-                        </section>
-</div>
-    </div>
-    </div>
-  </form>
-</div>
-<!-- description about all the login and signup pages are present  in the below code -->
-
-<div id="id02" class="modal">
-
-  <form class="modal-content animate" action="Login/signUp.php" method='POST'>
-    <div class="imgcontainer">
-      <span onclick="document.getElementById('id02').style.display='none'" class="close" title="Close Modal">&times;</span>
-    </div>
-
-    <div class="container">
-        
-
-<section>
-                            <h3>SignUp</h3>
-							<form method="post" action="Login/signUp.php">
-								<center>
-								<div class="row uniform">
-									<div class="3u 12u$(xsmall)">
-										<input type="text" name="name" id="name" value="" placeholder="Name" required/>
-									</div>
-									<div class="3u 12u$(xsmall)">
-										<input type="text" name="uname" id="uname" value="" placeholder="UserName" required/>
-									</div>
-								</div>
-								<div class="row uniform">
-									<div class="3u 12u$(xsmall)">
-										<input type="text" name="mobile" id="mobile" value="" placeholder="Mobile Number" required/>
-									</div>
-
-									<div class="3u 12u$(xsmall)">
-										<input type="email" name="email" id="email" value="" placeholder="Email" required/>
-									</div>
-								</div>
-								<div class="row uniform">
-									<div class="3u 12u$(xsmall)">
-			                            <input type="password" name="password" id="password" value="" placeholder="Password" required/>
-			                        </div>
-			                        <div class="3u 12u$(xsmall)">
-			                            <input type="password" name="pass" id="pass" value="" placeholder="Retype Password" required/>
-			                        </div>
-								</div>
-								<div class="row uniform">
-									<div class="6u 12u$(xsmall)">
-										<input type="text" name="addr" id="addr" value="" placeholder="Address" style="width:80%" required/>
-									</div>
-								</div>
-								<div class="row uniform">
-									<p>
-			                            <b>Category : </b>
-			                        </p>
-			                        <div class="3u 12u$(small)">
-			                            <input type="submit" id="farmer" name="category" value="Farmer" checked>
-			                        
-			                        </div>
-			                        <div class="3u 12u$(small)">
-			                            <input type="submit" id="buyer" name="category" value="Buyer">
-			                          
-			                        </div>
-								</div>
-								<!-- <div class="row uniform">
-									<div class="3u 12u$(small)">
-										<input type="submit" value="Submit" name="submit" class="special" /></li>
-									</div>
-									<div class="3u 12u$(small)">
-										<input type="reset" value="Reset" name="reset"/></li>
-									</div>
-								</div> -->
-							</center>
-							</form>
-						</section>
-
-    </div>
-    </div>
-  </form>
-</div>
-
-
-
-<script>
-// Get the modal
-var modal = document.getElementById('id01');
-
-// When the user clicks anywhere outside of the modal, close it
-window.onclick = function(event) {
-    if (event.target == modal) {
-        modal.style.display = "none";
-    }
-}
-
-var modal1= document.getElementById('id02');
-
-// When the user clicks anywhere outside of the modal, close it
-window.onclick = function(event) {
-    if (event.target == modal1) {
-        modal1.style.display = "none";
-    }
-}
-
-</script>
-
-
-	</body>
-</html>
+<?php require __DIR__ . '/includes/footer.php'; ?>

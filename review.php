@@ -1,140 +1,156 @@
 <?php
-	session_start();
-	require 'db.php';
-	$pid = $_GET['pid'];
+require __DIR__ . '/includes/bootstrap.php';
+
+$pid = get_int('pid');
+$product = $pid > 0 ? db_row(
+    'SELECT p.*, f.fname FROM fproduct p JOIN farmer f ON f.fid = p.fid WHERE p.pid = ?',
+    'i',
+    [$pid]
+) : null;
+
+if (!$product) {
+    flash('error', 'That product could not be found.');
+    redirect('market.php');
+}
+
+$reviewError = '';
+$oldComment  = '';
+$oldRating   = 0;
+
+if (is_post()) {
+    csrf_check();
+    require_login();
+
+    $oldComment = post_str('comment');
+    $oldRating  = (int) post_str('rating');
+
+    if ($oldRating < 1 || $oldRating > 5) {
+        $reviewError = 'Please choose a star rating from 1 to 5.';
+    } elseif ($oldComment === '' || str_len($oldComment) > 500) {
+        $reviewError = 'Please write a short review (up to 500 characters).';
+    } else {
+        db_run(
+            'INSERT INTO review (pid, name, rating, comment) VALUES (?, ?, ?, ?)',
+            'isis',
+            [$pid, current_user()['name'], $oldRating, $oldComment]
+        );
+        flash('success', 'Thanks for your review!');
+        redirect('review.php?pid=' . $pid . '#reviews');
+    }
+}
+
+$stats   = db_row('SELECT AVG(rating) AS avg_rating, COUNT(*) AS total FROM review WHERE pid = ?', 'i', [$pid]);
+$avg     = $stats && $stats['total'] > 0 ? (float) $stats['avg_rating'] : 0.0;
+$total   = $stats ? (int) $stats['total'] : 0;
+$reviews = db_all('SELECT name, rating, comment FROM review WHERE pid = ? ORDER BY reviewId DESC', 'i', [$pid]);
+
+$pageTitle = $product['product'];
+$active    = 'market';
+require __DIR__ . '/includes/header.php';
 ?>
 
+<section class="section">
+    <div class="wrap">
+        <nav class="crumbs" aria-label="Breadcrumb">
+            <a href="market.php">Digital Bazar</a> / <span><?= e($product['product']) ?></span>
+        </nav>
 
-<!DOCTYPE html>
-<html>
-<head>
-	<title>KISAN: Product</title>
-	<meta lang="eng">
-	<meta charset="UTF-8">
-		<title>KISAN</title>
-		<meta http-equiv="content-type" content="text/html; charset=utf-8" />
-		<meta name="description" content="" />
-		<meta name="keywords" content="" />
-		<link href="bootstrap\css\bootstrap.min.css" rel="stylesheet">
-		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-        <script src="bootstrap\js\bootstrap.min.js"></script>
-		<!--[if lte IE 8]><script src="css/ie/html5shiv.js"></script><![endif]-->
-		<script src="js/jquery.min.js"></script>
-		<script src="js/skel.min.js"></script>
-		<script src="js/skel-layers.min.js"></script>
-		<script src="js/init.js"></script>
-		<link rel="stylesheet" href="Blog/commentBox.css" />
-		<noscript>
-			<link rel="stylesheet" href="css/skel.css" />
-			<link rel="stylesheet" href="css/style.css" />
-			<link rel="stylesheet" href="css/style-xlarge.css" />
-		</noscript>
-</head>
-<body>
+        <div class="product-detail">
+            <div class="card product-photo">
+                <img src="<?= e(product_image($product['pimage'])) ?>" alt="<?= e($product['product']) ?>">
+            </div>
 
+            <div class="product-info">
+                <span class="chip chip-static"><?= e($product['pcat']) ?></span>
+                <h1><?= e($product['product']) ?></h1>
 
-				<?php
-					require 'menu.php';
+                <div class="rating-line">
+                    <?php if ($total > 0): ?>
+                        <?= stars_html($avg) ?>
+                        <span><strong><?= e(number_format($avg, 1)) ?></strong> &middot; <?= $total ?> review<?= $total === 1 ? '' : 's' ?></span>
+                    <?php else: ?>
+                        <span>No reviews yet</span>
+                    <?php endif; ?>
+                </div>
 
-					$sql="SELECT * FROM fproduct WHERE pid = '$pid'";
-					$result = mysqli_query($conn, $sql);
-					$row = mysqli_fetch_assoc($result);
+                <p class="product-price"><?= e(money($product['price'])) ?> <small>/ <?= e($product['unit']) ?></small></p>
+                <p class="product-owner"><i class="fa fa-user" aria-hidden="true"></i> Sold by <strong><?= e($product['fname']) ?></strong></p>
 
-					$fid = $row['fid'];
-					$sql = "SELECT * FROM farmer WHERE fid = '$fid'";
-					$result = mysqli_query($conn, $sql);
-					$frow = mysqli_fetch_assoc($result);
+                <div class="product-desc"><?= nl($product['pinfo']) ?></div>
 
-					$picDestination = "productimages/".$row['pimage'];
+                <div class="actions">
+                    <?php if (is_buyer()): ?>
+                        <form method="post" action="myCart.php" class="inline-form">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="action" value="add">
+                            <input type="hidden" name="pid" value="<?= (int) $product['pid'] ?>">
+                            <button type="submit" class="btn btn-ghost btn-lg"><i class="fa fa-plus" aria-hidden="true"></i> Add to Jhola</button>
+                        </form>
+                        <a class="btn btn-primary btn-lg" href="buyNow.php?pid=<?= (int) $product['pid'] ?>">Buy now</a>
+                    <?php elseif (is_farmer()): ?>
+                        <p class="note">You are logged in as a farmer. Switch to a buyer account to place orders.</p>
+                    <?php else: ?>
+                        <a class="btn btn-primary btn-lg" href="login.php">Log in to buy</a>
+                        <a class="btn btn-ghost btn-lg" href="register.php">Create an account</a>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
 
-					?>
-				<section id="main" class="wrapper style1 align-center">
-						<div class="container">
-							<div class="row">
-								<div class="col-sm-4">
-									<img class="image fit" src="<?php echo $picDestination.'';?>" alt="" />
-								</div><!-- Image of farmer-->
-								<div class="col-12 col-sm-6">
-									<p style="font: 50px Times new roman;"><?= $row['product']; ?></p>
-									<p style="font: 30px Times new roman;">Product Owner : <?= $frow['fname']; ?></p>
-									<p style="font: 30px Times new roman;">Price : <?= $row['price'].' /-'; ?></p>
-								</div>
-							</div><br />
-							<div class="row">
-								<div class="col-12 col-sm-12" style="font: 25px Times new roman;">
-									<?= $row['pinfo']; ?>
-								</div>
-							</div>
-						</div>
-
-						<br /><br />
-
-						<div class="12u$">
-                            <center>
-                                <div class="row uniform">
-                                    <div class="6u 12u$(large)">
-                                        <a href="myCart.php?flag=1&pid=<?= $pid; ?>" class="btn btn-primary" style="text-decoration: none;"><span class="glyphicon glyphicon-shopping-cart"> AddToCart</a>
-                                    </div>
-                                    <div class="6u 12u$(large)">
-                                        <a href="buyNow.php?pid=<?= $pid; ?>" class="btn btn-primary" style="text-decoration: none;">Buy Now</a>
-                                    </div>
-                                </div>
-                            </center>
+        <section class="reviews" id="reviews">
+            <h2>Reviews</h2>
+            <div class="review-layout">
+                <div>
+                    <?php if ($reviews): ?>
+                        <?php foreach ($reviews as $r): ?>
+                            <article class="review">
+                                <header>
+                                    <strong><?= e($r['name']) ?></strong>
+                                    <?= stars_html((float) min(5, max(0, (int) $r['rating']))) ?>
+                                </header>
+                                <p><?= nl($r['comment']) ?></p>
+                            </article>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <div class="empty">
+                            <i class="fa fa-comments-o" aria-hidden="true"></i>
+                            <h3>Be the first to review</h3>
+                            <p>Tried this product? Tell others what you thought.</p>
                         </div>
+                    <?php endif; ?>
+                </div>
 
-					<div class="container">
-						<h1>Product Reviews</h1>
-					<div class="row">
-						<?php
-							$sql = "SELECT * FROM review WHERE pid='$pid'";
-							$result = mysqli_query($conn, $sql);
-						?>
-						<div class="col-0 col-sm-3"></div>
-						<div class="col-12 col-sm-6">
-							<?php
-								if($result) :
-									while($row1 = $result->fetch_array()) :
-							?>
-							<div class="con">
-								<div class="row">
-									<div class="col-sm-4">
-										<em style="color: black;"><?= $row1['comment']; ?></em>
-									</div>
-									<div class="col-sm-4">
-										<em style="color: black;"><?php echo "Rating : ".$row1['rating'].' out of 10';?></em>
-									</div>
-								</div>
-								<span class="time-right" style="color: black;"><?php echo "From: ".$row1['name']; ?></span>
-								<br /><br />
-							</div>
-						<?php endwhile; endif;?>
-					</div>
-				</div>
-			</div>
-			<?php
+                <aside class="card card-pad review-form">
+                    <h3>Rate this product</h3>
+                    <?php if (is_logged_in()): ?>
+                        <?php if ($reviewError): ?>
+                            <div class="form-errors" role="alert"><?= e($reviewError) ?></div>
+                        <?php endif; ?>
+                        <form method="post" action="review.php?pid=<?= (int) $pid ?>#reviews">
+                            <?= csrf_field() ?>
+                            <div class="field">
+                                <span class="label">Your rating</span>
+                                <div class="star-input">
+                                    <?php for ($i = 5; $i >= 1; $i--): ?>
+                                        <input type="radio" id="star<?= $i ?>" name="rating" value="<?= $i ?>" <?= $oldRating === $i ? 'checked' : '' ?>>
+                                        <label for="star<?= $i ?>" title="<?= $i ?> star<?= $i === 1 ? '' : 's' ?>">&#9733;</label>
+                                    <?php endfor; ?>
+                                </div>
+                            </div>
+                            <div class="field">
+                                <label for="comment">Your review</label>
+                                <textarea id="comment" name="comment" maxlength="500" rows="4" placeholder="How was the quality and freshness?"><?= e($oldComment) ?></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-block">Submit review</button>
+                        </form>
+                    <?php else: ?>
+                        <p class="muted">Log in to share your experience with this product.</p>
+                        <a class="btn btn-primary btn-block" href="login.php">Log in</a>
+                    <?php endif; ?>
+                </aside>
+            </div>
+        </section>
+    </div>
+</section>
 
-			?>
-			<div class="container">
-				<p style="font: 20px Times new roman; align: left;">Rate this product</p>
-				<form method="POST" action="reviewInput.php?pid=<?= $pid; ?>">
-					<div class="row">
-						<div class="col-sm-7">
-							<textarea style="background-color:white;color: black;" cols="5" name="comment" placeholder="Write a review"></textarea>
-						</div>
-						<div class="col-sm-5">
-							<br />
-							Rating: <input type="number" min="0" max="10" name="rating" value="0"/>
-						</div>
-					</div>
-					<div class="row">
-						<div class="col-sm-12">
-							<br />
-							<input type="submit" />
-						</div>
-					</div>
-				</form>
-			</div>
-
-
-	</body>
-	</html>
+<?php require __DIR__ . '/includes/footer.php'; ?>

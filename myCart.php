@@ -1,111 +1,110 @@
 <?php
-	session_start();
-	require 'db.php';
-    if(!isset($_SESSION['logged_in']) OR $_SESSION['logged_in'] == 0)
-	{
-		$_SESSION['message'] = "You need to first login to access this page !!!";
-		header("Location: Login/error.php");
-	}
-    $bid = $_SESSION['id'];
-    if(isset($_GET['flag']))
-    {
-        $pid = $_GET['pid'];
+require __DIR__ . '/includes/bootstrap.php';
 
-        $sql = "INSERT INTO mycart (bid,pid)
-               VALUES ('$bid', '$pid')";
-        $result = mysqli_query($conn, $sql);
+require_role('buyer');
+$bid = current_user()['id'];
+
+// Adding and removing are POST actions with CSRF protection (the old version changed the cart from a plain link).
+if (is_post()) {
+    csrf_check();
+    $action = post_str('action');
+    $pid    = (int) post_str('pid');
+
+    if ($action === 'add') {
+        $exists = db_val('SELECT COUNT(*) FROM fproduct WHERE pid = ?', 'i', [$pid]);
+        if (!$exists) {
+            flash('error', 'That product is no longer available.');
+            redirect('market.php');
+        }
+        $inCart = db_val('SELECT COUNT(*) FROM mycart WHERE bid = ? AND pid = ?', 'ii', [$bid, $pid]);
+        if ($inCart) {
+            flash('info', 'That product is already in your Jhola.');
+        } else {
+            db_run('INSERT INTO mycart (bid, pid) VALUES (?, ?)', 'ii', [$bid, $pid]);
+            flash('success', 'Added to your Jhola.');
+        }
+        redirect('review.php?pid=' . $pid);
     }
 
+    if ($action === 'remove') {
+        db_run('DELETE FROM mycart WHERE bid = ? AND pid = ?', 'ii', [$bid, $pid]);
+        flash('success', 'Removed from your Jhola.');
+        redirect('myCart.php');
+    }
+
+    redirect('myCart.php');
+}
+
+$items = db_all(
+    'SELECT p.pid, p.product, p.pcat, p.price, p.unit, p.pimage, f.fname
+       FROM mycart c
+       JOIN fproduct p ON p.pid = c.pid
+       JOIN farmer f ON f.fid = p.fid
+      WHERE c.bid = ?
+   ORDER BY p.product',
+    'i',
+    [$bid]
+);
+
+$total = 0.0;
+foreach ($items as $it) {
+    $total += (float) $it['price'];
+}
+
+$pageTitle = 'My Jhola';
+$active    = 'cart';
+require __DIR__ . '/includes/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-	<head>
-		<meta charset="UTF-8">
-		<title>KISAN: My JHOLA</title>
-		<meta http-equiv="content-type" content="text/html; charset=utf-8" />
-		<meta name="description" content="" />
-		<meta name="keywords" content="" />
-		<link href="bootstrap\css\bootstrap.min.css" rel="stylesheet">
-		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-        <script src="bootstrap\js\bootstrap.min.js"></script>
-		<!--[if lte IE 8]><script src="css/ie/html5shiv.js"></script><![endif]-->
-		<link rel="stylesheet" href="login.css"/>
-		<script src="js/jquery.min.js"></script>
-		<script src="js/skel.min.js"></script>
-		<script src="js/skel-layers.min.js"></script>
-		<script src="js/init.js"></script>
-		<noscript>
-			<link rel="stylesheet" href="css/skel.css" />
-			<link rel="stylesheet" href="css/style.css" />
-			<link rel="stylesheet" href="css/style-xlarge.css" />
-		</noscript>
-		<!--[if lte IE 8]><link rel="stylesheet" href="css/ie/v8.css" /><![endif]-->
-	</head>
-	<body class>
 
-		<?php
-			require 'menu.php';
-			function dataFilter($data)
-			{
-				$data = trim($data);
-				$data = stripslashes($data);
-				$data = htmlspecialchars($data);
-				return $data;
-			}
-		?>
+<section class="page-head">
+    <div class="wrap">
+        <h1>My Jhola</h1>
+        <p class="lead muted">Your saved products. Order each one when you are ready.</p>
+    </div>
+</section>
 
-		<!-- One -->
-			<section id="main" class="wrapper style1 align-center" >
-				<div class="container">
-						<h2>My JHOLA</h2>
+<section class="section-tight">
+    <div class="wrap">
+        <?php if ($items): ?>
+            <div class="split">
+                <div class="cart-list">
+                    <?php foreach ($items as $it): ?>
+                        <article class="card cart-item">
+                            <a href="review.php?pid=<?= (int) $it['pid'] ?>"><img class="cart-thumb" src="<?= e(product_image($it['pimage'])) ?>" alt="<?= e($it['product']) ?>"></a>
+                            <div class="cart-info">
+                                <h3><a href="review.php?pid=<?= (int) $it['pid'] ?>"><?= e($it['product']) ?></a></h3>
+                                <p class="muted small"><?= e($it['pcat']) ?> &middot; by <?= e($it['fname']) ?></p>
+                                <span class="cart-price"><?= e(money($it['price'])) ?> / <?= e($it['unit']) ?></span>
+                            </div>
+                            <div class="cart-actions">
+                                <a class="btn btn-primary btn-sm" href="buyNow.php?pid=<?= (int) $it['pid'] ?>">Buy now</a>
+                                <form method="post" action="myCart.php">
+                                    <?= csrf_field() ?>
+                                    <input type="hidden" name="action" value="remove">
+                                    <input type="hidden" name="pid" value="<?= (int) $it['pid'] ?>">
+                                    <button type="submit" class="btn btn-ghost btn-sm btn-block"><i class="fa fa-trash-o" aria-hidden="true"></i> Remove</button>
+                                </form>
+                            </div>
+                        </article>
+                    <?php endforeach; ?>
+                </div>
 
-				<section id="two" class="wrapper style2 align-center">
-				<div class="container">
-					<div class="row">
-					<?php
-                        $sql = "SELECT * FROM mycart WHERE bid = '$bid'";
-                        $result = mysqli_query($conn, $sql);
-						while($row = $result->fetch_array()):
-                            $pid = $row['pid'];
-                            $sql = "SELECT * FROM fproduct WHERE pid = '$pid'";
-                            $result1 = mysqli_query($conn, $sql);
-                            $row1 = $result1->fetch_array();
-							$picDestination = "productimages".$row1['pimage'];
-						?>
-							<div class="col-md-4">
-							<section>
-							<strong><h2 class="title" style="color:black; "><?php echo $row1['product'].'';?></h2></strong>
-							<a href="review.php?pid=<?php echo $row1['pid'] ;?>" > <img class="image fit" src="<?php echo $picDestination;?>" alt=""  /></a>
+                <aside class="card summary">
+                    <h3>Summary</h3>
+                    <div class="summary-row"><span>Items</span><span><?= count($items) ?></span></div>
+                    <div class="summary-row summary-total"><span>Estimated total (1 unit each)</span><span><?= e(money($total)) ?></span></div>
+                    <p class="muted small" style="margin:1rem 0 0">Each product is ordered separately with its own delivery details.</p>
+                </aside>
+            </div>
+        <?php else: ?>
+            <div class="empty">
+                <i class="fa fa-shopping-cart" aria-hidden="true"></i>
+                <h3>Your Jhola is empty</h3>
+                <p>Browse the Digital Bazar and add products you like.</p>
+                <a class="btn btn-primary" href="market.php">Browse the Bazar</a>
+            </div>
+        <?php endif; ?>
+    </div>
+</section>
 
-							<div style="align: left">
-							<blockquote><?php echo "Type : ".$row1['pcat'].'';?><br><?php echo "Price : ".$row1['price'].' /-';?><br></blockquote>
-            <!-- //changed buy to mycart -->
-							<div class="12u$">
-                            <center>
-                                <div class="row uniform">
-                                    <!-- <div class="6u 12u$(large)">
-                                        <a href="myCart.php?flag=1&pid=<?= $pid; ?>" class="btn btn-primary" style="text-decoration: none;"><span class="glyphicon glyphicon-shopping-cart"> AddToCart</a>
-                                    </div> -->
-                                    <div class="6u 12u$(large)">
-                                        <a href="buyNow.php?pid=<?= $pid; ?>" class="btn btn-primary" style="text-decoration: none;">Buy Now</a>
-                                    </div>
-                                </div>
-                            </center>
-                        </div>
-
-						</section>
-						</div>
-
-                    <?php endwhile;	?>
-
-
-
-					</div>
-
-			</section>
-					</header>
-
-			</section>
-
-	</body>
-</html>
+<?php require __DIR__ . '/includes/footer.php'; ?>

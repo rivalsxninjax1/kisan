@@ -1,98 +1,81 @@
 <?php
-	session_start();
+require __DIR__ . '/includes/bootstrap.php';
+
+require_login();
+$user = current_user();
+
+$errors = [];
+$title  = '';
+$content = '';
+
+if (is_post()) {
+    csrf_check();
+    $title   = post_str('blogTitle');
+    $content = post_str('blogContent');
+
+    if (str_len($title) < 3 || str_len($title) > 150) {
+        $errors[] = 'The title must be between 3 and 150 characters.';
+    }
+    if (str_len($content) < 10 || str_len($content) > 5000) {
+        $errors[] = 'The post must be between 10 and 5000 characters.';
+    }
+
+    if (!$errors) {
+        db_run(
+            'INSERT INTO blogdata (blogUser, blogTitle, blogContent) VALUES (?, ?, ?)',
+            'sss',
+            [$user['username'], $title, $content]
+        );
+        flash('success', 'Your post is live.');
+        redirect('blogView.php#post-' . db_insert_id());
+    }
+}
+
+$pageTitle = 'Write a post';
+$active    = 'blog';
+require __DIR__ . '/includes/header.php';
 ?>
 
-<!DOCTYPE HTML>
-
-<html>
-	<head>
-		<title>AgroCulture : Write a Blog</title>
-		<meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link href="../bootstrap\css\bootstrap.min.css" rel="stylesheet">
-		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-        <script src="../bootstrap\js\bootstrap.min.js"></script>
-        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-		<meta name="description" content="" />
-		<meta name="keywords" content="" />
-		<!--[if lte IE 8]><script src="css/ie/html5shiv.js"></script><![endif]-->
-		<script src="js/jquery.min.js"></script>
-		<script src="js/skel.min.js"></script>
-		<script src="js/skel-layers.min.js"></script>
-		<script src="js/init.js"></script>
-		<link rel="stylesheet" href="css/skel.css" />
-		<link rel="stylesheet" href="css/style.css" />
-		<link rel="stylesheet" href="css/style-xlarge.css" />
-		<script src="https://cdn.ckeditor.com/4.8.0/full/ckeditor.js"></script>
-	</head>
-	<body class="subpage">
-
-		<?php
-			require 'menu.php';
-		?>
-
-
-
-	<!--	<div class="btn-group-lg btn-group-justified">
-			<div class="row">
-				<div class="4u$ 12u$(small)">
-    				<a href="#" class="button alt fit">Blogs & Poetry</a>
-				</div>
-				<div class="4u$ 12u$(small)">
-    				<a href="#" class="button alt fit">Photography</a>
-				</div>
-				<div class="4u$ 12u$(small)">
-					<a href="#" class="button alt fit">Paintings and Sketches</a>
-				</div>
-			</div>
-  		</div>
-
-		<br> -->
-
-	<form method="post" action="Blog/blogSubmit.php">
-        <section id="main" class="wrapper">
-            <div class="inner">
-				<div class="container" style="width: 70%">
-				<div class="row uniform">
-					<div class="9u 12u$(small)">
-
-					</div>
-					<div class="3u 12u$(small)">
-						<a href="blogView.php" class="button special fit">View Blogs</a>
-					</div>
-				</div>
-				<br />
-                <div class="box">
-                    <div class="row uniform">
-                        <div class="12u$">
-                            <input type="text" name="blogTitle" id="blogTitle" value="" placeholder="Blog Title" required/>
-                        </div>
-                       	<div class="12u$">
-							<textarea name="blogContent" id="blogContent" rows="12" placeholder="Blog Content"></textarea>
-						</div>
-						<br>
-						<div class="12u$">
-						<center>
-							<input type="submit" name="submit" class="button special" value="SUBMIT"/>
-						</center>
-						</div>
-                    </div>
-                </div>
+<section class="page-head">
+    <div class="wrap">
+        <div class="row-between">
+            <div>
+                <h1>Write a post</h1>
+                <p class="lead muted">Share a tip, a harvest update or a story with the community.</p>
             </div>
-        </section>
-    </form>
+            <a class="btn btn-ghost" href="blogView.php">View posts</a>
+        </div>
+    </div>
+</section>
 
-		<script>
-			 CKEDITOR.replace( 'blogContent' );
-		</script>
+<section class="section-tight">
+    <div class="narrow">
+        <div class="card card-pad">
+            <?php if ($errors): ?>
+                <div class="form-errors" role="alert">
+                    <ul>
+                        <?php foreach ($errors as $msg): ?>
+                            <li><?= e($msg) ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            <?php endif; ?>
 
-		<!-- Scripts -->
-            <script src="assets/js/jquery.min.js"></script>
-            <script src="assets/js/jquery.scrolly.min.js"></script>
-            <script src="assets/js/jquery.scrollex.min.js"></script>
-            <script src="assets/js/skel.min.js"></script>
-            <script src="assets/js/util.js"></script>
-            <script src="assets/js/main.js"></script>
+            <form method="post" action="blogWrite.php" novalidate>
+                <?= csrf_field() ?>
+                <div class="field">
+                    <label for="blogTitle">Title</label>
+                    <input type="text" id="blogTitle" name="blogTitle" value="<?= e($title) ?>" maxlength="150" required>
+                </div>
+                <div class="field">
+                    <label for="blogContent">Your post</label>
+                    <textarea id="blogContent" name="blogContent" rows="12" maxlength="5000" required><?= e($content) ?></textarea>
+                    <p class="hint">Plain text. Leave a blank line between paragraphs.</p>
+                </div>
+                <button type="submit" class="btn btn-primary btn-lg">Publish</button>
+            </form>
+        </div>
+    </div>
+</section>
 
-	</body>
-</html>
+<?php require __DIR__ . '/includes/footer.php'; ?>

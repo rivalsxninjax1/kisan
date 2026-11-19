@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" role="img" aria-label="No photo available">
+  <rect width="400" height="300" fill="#eef5ec"/>
+  <circle cx="200" cy="140" r="58" fill="#dcebd8"/>
+  <path d="M200 185c0-38 8-62 34-80-4 34-12 58-34 80z" fill="#14803c"/>
+  <path d="M200 185c0-30-6-48-28-64 2 28 10 48 28 64z" fill="#2fa65a"/>
+  <path d="M200 188v26" stroke="#0d5f2b" stroke-width="5" stroke-linecap="round"/>
+  <text x="200" y="250" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#6b7d70" text-anchor="middle">No photo yet</text>
+</svg>

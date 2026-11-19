@@ -1,229 +1,151 @@
 <?php
-	session_start();
+require __DIR__ . '/includes/bootstrap.php';
 
-	require 'db.php';
+// Reading is public. Liking and commenting need a login.
+// Every action ends with a redirect, so refreshing the page never re-sends a comment.
+if (is_post()) {
+    csrf_check();
+    require_login();
+    $user   = current_user();
+    $action = post_str('action');
+    $blogId = (int) post_str('blog_id');
 
-	if(!isset($_SESSION['logged_in']) OR $_SESSION['logged_in'] == 0)
-	{
-		$_SESSION['message'] = "You need to first login to access this page !!!";
-		header("Location: Login/error.php");
-	}
+    if (!db_val('SELECT COUNT(*) FROM blogdata WHERE blogId = ?', 'i', [$blogId])) {
+        flash('error', 'That post no longer exists.');
+        redirect('blogView.php');
+    }
 
-	if ($_SERVER["REQUEST_METHOD"] == "POST" AND isset($_SESSION['logged_in']) AND $_SESSION['logged_in'] == 1)
-	{
-		if(isset($_POST['comment']) AND $_POST['comment'] != "")
-		{
-			$sql = "SELECT * FROM blogdata ORDER BY blogId DESC";
-			$result = mysqli_query($conn, $sql);
+    if ($action === 'like') {
+        $liked = db_val(
+            'SELECT COUNT(*) FROM likedata WHERE blogId = ? AND userRole = ? AND blogUserId = ?',
+            'isi',
+            [$blogId, $user['role'], $user['id']]
+        );
+        if ($liked) {
+            db_run('DELETE FROM likedata WHERE blogId = ? AND userRole = ? AND blogUserId = ?', 'isi', [$blogId, $user['role'], $user['id']]);
+            db_run('UPDATE blogdata SET likes = GREATEST(likes - 1, 0) WHERE blogId = ?', 'i', [$blogId]);
+        } else {
+            db_run('INSERT INTO likedata (blogId, userRole, blogUserId) VALUES (?, ?, ?)', 'isi', [$blogId, $user['role'], $user['id']]);
+            db_run('UPDATE blogdata SET likes = likes + 1 WHERE blogId = ?', 'i', [$blogId]);
+        }
+    } elseif ($action === 'comment') {
+        $comment = post_str('comment');
+        if ($comment === '' || str_len($comment) > 500) {
+            flash('error', 'Comments must be between 1 and 500 characters.');
+        } else {
+            db_run(
+                'INSERT INTO blogfeedback (blogId, comment, commentUser, commentPic) VALUES (?, ?, ?, ?)',
+                'isss',
+                [$blogId, $comment, $user['username'], $user['pic']]
+            );
+        }
+    }
+    redirect('blogView.php#post-' . $blogId);
+}
 
-			while($row = $result->fetch_array())
-			{
-				$check = "submit".$row['blogId'];
-				if(isset($_POST[$check]))
-				{
-					$blogId = $row['blogId'];
-					break;
-	 			}
-			}
+$posts = db_all('SELECT blogId, blogUser, blogTitle, blogContent, blogTime, likes FROM blogdata ORDER BY blogId DESC LIMIT 50');
 
-			$comment = dataFilter($_POST['comment']);
-			if(isset($_SESSION['logged_in']) AND $_SESSION['logged_in'] == 1)
-			{
-				$commentUser = $_SESSION['Username'];
-				$pic = $_SESSION['picName'];
-			}
-			else {
-				$commentUser = "Anonymous";
-				$pic = "profile0.png";
-			}
-			if(isset($blogId))
-			{
-				$sql = "INSERT INTO blogfeedback (blogId, comment, commentUser, commentPic)
-						VALUES ('$blogId' ,'$comment', '$commentUser', '$pic');";
-				$result = mysqli_query($conn, $sql);
-			}
-		}
+$comments = [];
+$likedIds = [];
+if ($posts) {
+    foreach (db_all('SELECT blogId, comment, commentUser, commentPic, commentTime FROM blogfeedback ORDER BY commentId ASC') as $row) {
+        $comments[(int) $row['blogId']][] = $row;
+    }
+    if (is_logged_in()) {
+        $me = current_user();
+        foreach (db_all('SELECT blogId FROM likedata WHERE userRole = ? AND blogUserId = ?', 'si', [$me['role'], $me['id']]) as $row) {
+            $likedIds[(int) $row['blogId']] = true;
+        }
+    }
+}
 
-		else
-		{
-			$sql = "SELECT * FROM blogdata ORDER BY blogId DESC";
-			$result = mysqli_query($conn, $sql);
-
-			while($row = $result->fetch_array())
-			{
-				$check = "like".$row['blogId'];
-				if(isset($_POST[$check]))
-				{
-					$blogId = $row['blogId'];
-					break;
-				}
-			}
-			$likeCheck = "isLiked".$blogId;
-			if(!isset($_SESSION[$likeCheck]) OR $_SESSION[$likeCheck] == 0)
-			{
-				$id = $_SESSION['id'];
-				$sql = "SELECT * FROM likedata WHERE blogId = '$blogId' AND blogUserId = '$id'";
-				$result = mysqli_query($conn, $sql);
-				$num_rows = mysqli_num_rows($result);
-				if($num_rows == 0)
-				{
-					$sql = "INSERT INTO likedata (blogId, blogUserId)
-							VALUES('$blogId', '$id')";
-					$result = mysqli_query($conn, $sql);
-					$sql = "UPDATE blogdata SET likes = likes + 1 WHERE blogId = '$blogId'";
-					$result = mysqli_query($conn, $sql);
-					$_SESSION[$likeCheck] = 1;
-				}
-			}
-		}
-	}
-
-	function dataFilter($data)
-	{
-		$data = trim($data);
-		$data = stripslashes($data);
-		$data = htmlspecialchars($data);
-		return $data;
-	}
-
-	$sql = "SELECT * FROM blogdata ORDER BY blogId DESC";
-	$result = mysqli_query($conn, $sql);
-
-	function formatDate($date)
-	{
-		return date('g:i a', strtotime($date));
-	}
-
+$pageTitle = 'Blog';
+$active    = 'blog';
+require __DIR__ . '/includes/header.php';
 ?>
 
-<!DOCTYPE HTML>
+<section class="page-head">
+    <div class="wrap">
+        <div class="row-between">
+            <div>
+                <p class="eyebrow">KISAN Blog</p>
+                <h1>Stories from the field</h1>
+                <p class="lead muted">Tips, seasonal advice and news from farmers and buyers.</p>
+            </div>
+            <a class="btn btn-primary" href="blogWrite.php"><i class="fa fa-pencil" aria-hidden="true"></i> Write a post</a>
+        </div>
+    </div>
+</section>
 
-<html>
-	<head>
-		<title>KissAn : Blogs</title>
-		<meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link href="bootstrap\css\bootstrap.min.css" rel="stylesheet">
-		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-        <script src="bootstrap\js\bootstrap.min.js"></script>
-        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-		<meta name="description" content="" />
-		<meta name="keywords" content="" />
-		<!--[if lte IE 8]><script src="css/ie/html5shiv.js"></script><![endif]-->
-		<script src="js/jquery.min.js"></script>
-		<script src="js/skel.min.js"></script>
-		<script src="js/skel-layers.min.js"></script>
-		<script src="js/init.js"></script>
-		<link rel="stylesheet" href="css/skel.css" />
-		<link rel="stylesheet" href="css/style.css" />
-		<link rel="stylesheet" href="css/style-xlarge.css" />
-		<link rel="stylesheet" href="Blog/commentBox.css" />
-	</head>
-	<body class="subpage">
+<section class="section-tight">
+    <div class="narrow">
+        <?php if ($posts): ?>
+            <?php foreach ($posts as $post): ?>
+                <?php
+                    $id       = (int) $post['blogId'];
+                    $thread   = $comments[$id] ?? [];
+                    $isLiked  = isset($likedIds[$id]);
+                ?>
+                <article class="card post" id="post-<?= $id ?>">
+                    <header class="post-head">
+                        <h2><?= e($post['blogTitle']) ?></h2>
+                        <div class="post-meta">
+                            <i class="fa fa-user" aria-hidden="true"></i>
+                            <span>by <strong><?= e($post['blogUser']) ?></strong></span>
+                            <span>&middot;</span>
+                            <time><?= e(when($post['blogTime'])) ?></time>
+                        </div>
+                    </header>
 
-		<?php
-			require 'menu.php';
+                    <div class="post-body"><?= nl($post['blogContent']) ?></div>
 
-		?>
+                    <footer class="post-actions">
+                        <form method="post" action="blogView.php" class="inline-form">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="action" value="like">
+                            <input type="hidden" name="blog_id" value="<?= $id ?>">
+                            <button type="submit" class="like-btn <?= $isLiked ? 'is-liked' : '' ?>" aria-pressed="<?= $isLiked ? 'true' : 'false' ?>">
+                                <i class="fa <?= $isLiked ? 'fa-thumbs-up' : 'fa-thumbs-o-up' ?>" aria-hidden="true"></i>
+                                <?= $isLiked ? 'Liked' : 'Like' ?> &middot; <?= (int) $post['likes'] ?>
+                            </button>
+                        </form>
+                        <span class="muted small"><i class="fa fa-comment-o" aria-hidden="true"></i> <?= count($thread) ?> comment<?= count($thread) === 1 ? '' : 's' ?></span>
+                    </footer>
 
-			<section id="main" class="wrapper">
-				<div class="inner">
-					<div class="container" style="width: 70%">
-					<div class="row uniform">
-						<div class="9u 12u$(small)">
+                    <div class="comments">
+                        <?php foreach ($thread as $cm): ?>
+                            <div class="comment">
+                                <img class="avatar avatar-sm" src="<?= e(avatar_url($cm['commentPic'])) ?>" alt="">
+                                <div class="comment-bubble">
+                                    <div class="comment-meta"><strong><?= e($cm['commentUser']) ?></strong> <?= e(when($cm['commentTime'])) ?></div>
+                                    <p><?= nl($cm['comment']) ?></p>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
 
-						</div>
-						<div class="3u 12u$(small)">
-							<a href="blogWrite.php" class="button special fit"><span class="glyphicon glyphicon-pencil"></span> Write a Blog</a>
-						</div>
-					</div>
-					<br />
-					<?php
-						while($row = $result->fetch_array()) :
-							$id = $row['blogId'];
-							$sql = "SELECT * FROM blogfeedback WHERE blogId = '$id'";
-							$result1 = mysqli_query($conn, $sql);
-							$numComment = mysqli_num_rows($result1);
-					?>
-					<div class="box">
-						<h2><?= $row['blogTitle']; ?></h2>
-						<blockquote>
-							<?= $row['blogContent']; ?>
-							<p>--- <?= $row['blogUser']; ?></p>
-							<p><?= $row['blogTime']; ?></p>
-						</blockquote>
+                        <?php if (is_logged_in()): ?>
+                            <form method="post" action="blogView.php" class="comment-form">
+                                <?= csrf_field() ?>
+                                <input type="hidden" name="action" value="comment">
+                                <input type="hidden" name="blog_id" value="<?= $id ?>">
+                                <textarea name="comment" maxlength="500" placeholder="Write a comment..." aria-label="Write a comment" required></textarea>
+                                <button type="submit" class="btn btn-primary btn-sm">Post</button>
+                            </form>
+                        <?php else: ?>
+                            <p class="muted small" style="margin:0"><a href="login.php">Log in</a> to like or comment.</p>
+                        <?php endif; ?>
+                    </div>
+                </article>
+            <?php endforeach; ?>
+        <?php else: ?>
+            <div class="empty">
+                <i class="fa fa-comments-o" aria-hidden="true"></i>
+                <h3>No posts yet</h3>
+                <p>Be the first to share something with the community.</p>
+                <a class="btn btn-primary" href="blogWrite.php">Write a post</a>
+            </div>
+        <?php endif; ?>
+    </div>
+</section>
 
-						<form method="post" action="blogView.php">
-							<div class="row" style="align-items: center; justify-content: center; display: flex; flex-flow: column;">
-								<div class="6u 12u$(xsmall)" style="align-self: flex-start;">
-									<button class = "button special small" name="<?php echo 'like'.$id; ?>">
-									<span class="glyphicon glyphicon-thumbs-up"></span> Like</button>
-									<span><?= $row['likes']?></span>
-								</div>
-								<div class="6u 12u$(xsmall)" style="align-self: flex-start;">
-									<span class="glyphicon glyphicon-pencil"></span> Comments : <?= $numComment ?></button>
-								</div>
-								<div class="12u$">
-									<br>
-									<textarea style="resize: none;" name="comment" id="comment" rows="1" placeholder="Write a Comment!"></textarea>
-								</div>
-								<div class="12u$">
-									<center>
-									<br>
-									<input type="submit" name="<?php echo 'submit'.$id; ?>" class="button special small" value="Submit"/>
-									</center>
-								</div>
-						<?php
-							if($result1) :
-								while($row1 = $result1->fetch_array()) :
-						?>
-							<div class="con darker">
-								<img src="<?php echo 'images/profileImages/'.$row1['commentPic']?>" alt="Avatar"><span><em><?= $row1['commentUser']; ?></em></span>
-								<br>
-								<?= $row1['comment']; ?>
-								<span class="time-right"><?= formatDate($row1['commentTime']); ?></span>
-							</div>
-
-							<?php endwhile; ?>
-						<?php endif; ?>
-							</div>
-						</form>
-
-					</div>
-
-					<?php endwhile; ?>
-
-				</div>
-			</section>
-
-		<script>
-
-		// function ajax()
-		// 	{
-		// 		var req = new XMLHttpRequest();
-		// 		req.onreadystatechange = function()
-		// 		{
-		// 			if(req.readyState == 4 && req.status == 200)
-		// 			{
-		// 				document.getElementById('liked').innerHTML = req.responseText;
-		// 			}
-		// 		}
-		// 		req.open('POST', 'Blog/blogViewProcess.php', 'true');
-		// 		req.send();
-		// 	}
-		// 	setInterval(function(){ajax()}, 1000);
-
-		</script>
-
-
-		<script src="jquery/jquery-3.2.1.min.js"></script>
-		<!-- Scripts -->
-			<script src="assets/js/jquery.min.js"></script>
-			<script src="assets/js/jquery.scrolly.min.js"></script>
-			<script src="assets/js/jquery.scrollex.min.js"></script>
-			<script src="assets/js/skel.min.js"></script>
-			<script src="assets/js/util.js"></script>
-			<script src="assets/js/main.js"></script>
-
-	</body>
-</html>
+<?php require __DIR__ . '/includes/footer.php'; ?>

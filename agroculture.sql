@@ -1,304 +1,199 @@
--- phpMyAdmin SQL Dump
--- version 4.6.4
--- https://www.phpmyadmin.net/
+-- ============================================================================
+-- KISAN database  (import this file in phpMyAdmin > Import, at the SERVER level)
 --
--- Host: 127.0.0.1
--- Generation Time: Feb 26, 2018 at 07:52 AM
--- Server version: 5.7.14
--- PHP Version: 5.6.25
-
-SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
-SET time_zone = "+00:00";
-
-
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8mb4 */;
-
+-- It creates the `kisan` database that db.php expects, so you do not need to
+-- create or select a database first.
 --
--- Database: `agroculture`
+-- WARNING: this file drops and re-creates every KISAN table, so importing it
+-- again resets the data. Fine for local development.
 --
+-- Demo logins (password for both:  Demo@1234)
+--     farmer  ->  demo_farmer
+--     buyer   ->  demo_buyer
+-- ============================================================================
 
--- --------------------------------------------------------
+CREATE DATABASE IF NOT EXISTS `kisan`
+  DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE `kisan`;
 
---
--- Table structure for table `blogdata`
---
+SET NAMES utf8mb4;
+SET time_zone = '+00:00';
+SET FOREIGN_KEY_CHECKS = 0;
 
-CREATE TABLE `blogdata` (
-  `blogId` int(10) NOT NULL,
-  `blogUser` varchar(256) NOT NULL,
-  `blogTitle` varchar(256) NOT NULL,
-  `blogContent` longtext NOT NULL,
-  `blogTime` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `likes` int(10) NOT NULL DEFAULT '0'
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+DROP TABLE IF EXISTS `transaction`, `review`, `mycart`, `likedata`,
+                     `blogfeedback`, `blogdata`, `fproduct`, `buyer`, `farmer`;
 
---
--- Dumping data for table `blogdata`
---
+SET FOREIGN_KEY_CHECKS = 1;
 
-INSERT INTO `blogdata` (`blogId`, `blogUser`, `blogTitle`, `blogContent`, `blogTime`, `likes`) VALUES
-(19, 'ThePhenom', 'First Blog', '<p>Its Awesome website<img alt="wink" src="https://cdn.ckeditor.com/4.8.0/full/plugins/smiley/images/wink_smile.png" style="height:23px; width:23px" title="wink" /></p>\r\n', '2018-02-25 13:09:41', 1);
-
--- --------------------------------------------------------
-
---
--- Table structure for table `blogfeedback`
---
-
-CREATE TABLE `blogfeedback` (
-  `blogId` int(10) NOT NULL,
-  `comment` varchar(256) NOT NULL,
-  `commentUser` varchar(256) NOT NULL,
-  `commentPic` varchar(256) NOT NULL DEFAULT 'profile0.png',
-  `commentTime` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
---
--- Dumping data for table `blogfeedback`
---
-
-INSERT INTO `blogfeedback` (`blogId`, `comment`, `commentUser`, `commentPic`, `commentTime`) VALUES
-(19, 'Mast yarr', 'ThePhenom', 'profile0.png', '2018-02-25 13:09:54');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `buyer`
---
-
-CREATE TABLE `buyer` (
-  `bid` int(100) NOT NULL,
-  `bname` varchar(100) NOT NULL,
-  `busername` varchar(100) NOT NULL,
-  `bpassword` varchar(100) NOT NULL,
-  `bhash` varchar(100) NOT NULL,
-  `bemail` varchar(100) NOT NULL,
-  `bmobile` varchar(100) NOT NULL,
-  `baddress` text NOT NULL,
-  `bactive` int(100) NOT NULL DEFAULT '0'
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `farmer`
---
+-- ----------------------------------------------------------------------------
+-- Users
+-- ----------------------------------------------------------------------------
 
 CREATE TABLE `farmer` (
-  `fid` int(255) NOT NULL,
-  `fname` varchar(255) NOT NULL,
-  `fusername` varchar(255) NOT NULL,
-  `fpassword` varchar(255) NOT NULL,
-  `fhash` varchar(255) NOT NULL,
-  `femail` varchar(255) NOT NULL,
-  `fmobile` varchar(255) NOT NULL,
-  `faddress` text NOT NULL,
-  `factive` int(255) NOT NULL DEFAULT '0',
-  `frating` int(11) NOT NULL DEFAULT '0',
-  `picExt` varchar(255) NOT NULL DEFAULT 'png',
-  `picStatus` int(10) NOT NULL DEFAULT '0'
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+  `fid`       INT          NOT NULL AUTO_INCREMENT,
+  `fname`     VARCHAR(255) NOT NULL,
+  `fusername` VARCHAR(100) NOT NULL,
+  `fpassword` VARCHAR(255) NOT NULL,
+  `fhash`     VARCHAR(64)  NOT NULL DEFAULT '',
+  `femail`    VARCHAR(190) NOT NULL,
+  `fmobile`   VARCHAR(20)  NOT NULL,
+  `faddress`  TEXT         NOT NULL,
+  `factive`   TINYINT      NOT NULL DEFAULT 1,
+  `frating`   INT          NOT NULL DEFAULT 0,
+  `picExt`    VARCHAR(10)  NOT NULL DEFAULT 'png',
+  `picStatus` TINYINT      NOT NULL DEFAULT 0,
+  `created`   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`fid`),
+  UNIQUE KEY `uq_farmer_username` (`fusername`),
+  UNIQUE KEY `uq_farmer_email` (`femail`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Dumping data for table `farmer`
---
+CREATE TABLE `buyer` (
+  `bid`       INT          NOT NULL AUTO_INCREMENT,
+  `bname`     VARCHAR(255) NOT NULL,
+  `busername` VARCHAR(100) NOT NULL,
+  `bpassword` VARCHAR(255) NOT NULL,
+  `bhash`     VARCHAR(64)  NOT NULL DEFAULT '',
+  `bemail`    VARCHAR(190) NOT NULL,
+  `bmobile`   VARCHAR(20)  NOT NULL,
+  `baddress`  TEXT         NOT NULL,
+  `bactive`   TINYINT      NOT NULL DEFAULT 1,
+  `created`   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`bid`),
+  UNIQUE KEY `uq_buyer_username` (`busername`),
+  UNIQUE KEY `uq_buyer_email` (`bemail`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO `farmer` (`fid`, `fname`, `fusername`, `fpassword`, `fhash`, `femail`, `fmobile`, `faddress`, `factive`, `frating`, `picExt`, `picStatus`) VALUES
-(3, 'Kaivalya Hemant Mendki', 'ThePhenom', '$2y$10$22ezmzHRa9c5ycHmVm5RpOnlT4LwFaDZar1XhmLRJQKGrcVRhPgti', '61b4a64be663682e8cb037d9719ad8cd', 'kmendki98@gmail.com', '8600611198', 'abcde', 0, 0, 'png', 0);
-
--- --------------------------------------------------------
-
---
--- Table structure for table `fproduct`
---
+-- ----------------------------------------------------------------------------
+-- Marketplace
+-- ----------------------------------------------------------------------------
 
 CREATE TABLE `fproduct` (
-  `fid` int(255) NOT NULL,
-  `pid` int(255) NOT NULL,
-  `product` varchar(255) NOT NULL,
-  `pcat` varchar(255) NOT NULL,
-  `pinfo` varchar(255) NOT NULL,
-  `price` float NOT NULL,
-  `pimage` varchar(255) NOT NULL DEFAULT 'blank.png',
-  `picStatus` int(10) NOT NULL DEFAULT '0'
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
---
--- Dumping data for table `fproduct`
---
-
-INSERT INTO `fproduct` (`fid`, `pid`, `product`, `pcat`, `pinfo`, `price`, `pimage`, `picStatus`) VALUES
-(3, 27, 'Mango', 'Fruit', '<p>Mango raseela</p>\r\n', 500, 'Mango3.jpeg', 1),
-(3, 28, 'Ladyfinger', 'Vegetable', '<p>Its veggie</p>\r\n', 1000, 'Ladyfinger3.jpg', 1),
-(3, 29, 'Bajra', 'Grains', '<p>bajre di rti</p>\r\n', 400, 'Bajra3.jpg', 1),
-(3, 30, 'Banana', 'Fruit', '<p>Jalgaon banana</p>\r\n', 400, 'Banana3.jpg', 1);
-
--- --------------------------------------------------------
-
---
--- Table structure for table `likedata`
---
-
-CREATE TABLE `likedata` (
-  `blogId` int(10) NOT NULL,
-  `blogUserId` int(10) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
---
--- Dumping data for table `likedata`
---
-
-INSERT INTO `likedata` (`blogId`, `blogUserId`) VALUES
-(19, 3);
-
--- --------------------------------------------------------
-
---
--- Table structure for table `mycart`
---
+  `pid`       INT           NOT NULL AUTO_INCREMENT,
+  `fid`       INT           NOT NULL,
+  `product`   VARCHAR(255)  NOT NULL,
+  `pcat`      VARCHAR(50)   NOT NULL,
+  `pinfo`     TEXT          NOT NULL,
+  `price`     DECIMAL(10,2) NOT NULL,
+  `unit`      VARCHAR(20)   NOT NULL DEFAULT 'kg',
+  `pimage`    VARCHAR(255)  NOT NULL DEFAULT '',
+  `picStatus` TINYINT       NOT NULL DEFAULT 0,
+  `created`   TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`pid`),
+  KEY `idx_fproduct_fid` (`fid`),
+  KEY `idx_fproduct_cat` (`pcat`),
+  CONSTRAINT `fk_fproduct_farmer` FOREIGN KEY (`fid`) REFERENCES `farmer` (`fid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `mycart` (
-  `bid` int(10) NOT NULL,
-  `pid` int(10) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
---
--- Dumping data for table `mycart`
---
-
-INSERT INTO `mycart` (`bid`, `pid`) VALUES
-(3, 27),
-(3, 30);
-
--- --------------------------------------------------------
-
---
--- Table structure for table `review`
---
+  `bid` INT NOT NULL,
+  `pid` INT NOT NULL,
+  PRIMARY KEY (`bid`, `pid`),
+  KEY `idx_mycart_pid` (`pid`),
+  CONSTRAINT `fk_mycart_buyer`   FOREIGN KEY (`bid`) REFERENCES `buyer` (`bid`)    ON DELETE CASCADE,
+  CONSTRAINT `fk_mycart_product` FOREIGN KEY (`pid`) REFERENCES `fproduct` (`pid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `review` (
-  `pid` int(10) NOT NULL,
-  `name` varchar(255) NOT NULL,
-  `rating` int(10) NOT NULL,
-  `comment` text NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `transaction`
---
+  `reviewId` INT          NOT NULL AUTO_INCREMENT,
+  `pid`      INT          NOT NULL,
+  `name`     VARCHAR(255) NOT NULL,
+  `rating`   TINYINT      NOT NULL,
+  `comment`  TEXT         NOT NULL,
+  `created`  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`reviewId`),
+  KEY `idx_review_pid` (`pid`),
+  CONSTRAINT `fk_review_product` FOREIGN KEY (`pid`) REFERENCES `fproduct` (`pid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `transaction` (
-  `tid` int(10) NOT NULL,
-  `bid` int(10) NOT NULL,
-  `pid` int(10) NOT NULL,
-  `name` varchar(255) NOT NULL,
-  `city` varchar(255) NOT NULL,
-  `mobile` varchar(255) NOT NULL,
-  `email` varchar(255) NOT NULL,
-  `pincode` varchar(255) NOT NULL,
-  `addr` varchar(255) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+  `tid`       INT          NOT NULL AUTO_INCREMENT,
+  `bid`       INT          NOT NULL,
+  `pid`       INT          NOT NULL,
+  `name`      VARCHAR(255) NOT NULL,
+  `city`      VARCHAR(255) NOT NULL,
+  `mobile`    VARCHAR(20)  NOT NULL,
+  `email`     VARCHAR(190) NOT NULL,
+  `pincode`   VARCHAR(20)  NOT NULL,
+  `addr`      VARCHAR(255) NOT NULL,
+  `orderTime` TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`tid`),
+  KEY `idx_transaction_bid` (`bid`),
+  KEY `idx_transaction_pid` (`pid`),
+  CONSTRAINT `fk_transaction_buyer`   FOREIGN KEY (`bid`) REFERENCES `buyer` (`bid`)    ON DELETE CASCADE,
+  CONSTRAINT `fk_transaction_product` FOREIGN KEY (`pid`) REFERENCES `fproduct` (`pid`) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Dumping data for table `transaction`
---
+-- ----------------------------------------------------------------------------
+-- Blog
+-- ----------------------------------------------------------------------------
 
-INSERT INTO `transaction` (`tid`, `bid`, `pid`, `name`, `city`, `mobile`, `email`, `pincode`, `addr`) VALUES
-(1, 3, 28, 'sa,j,cns', 'sajc', 'sajch', 'kmendki98@gmail.com', 'sacu', 'ckaskjc');
+CREATE TABLE `blogdata` (
+  `blogId`      INT          NOT NULL AUTO_INCREMENT,
+  `blogUser`    VARCHAR(100) NOT NULL,
+  `blogTitle`   VARCHAR(255) NOT NULL,
+  `blogContent` LONGTEXT     NOT NULL,
+  `blogTime`    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `likes`       INT          NOT NULL DEFAULT 0,
+  PRIMARY KEY (`blogId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Indexes for dumped tables
---
+CREATE TABLE `blogfeedback` (
+  `commentId`   INT          NOT NULL AUTO_INCREMENT,
+  `blogId`      INT          NOT NULL,
+  `comment`     VARCHAR(500) NOT NULL,
+  `commentUser` VARCHAR(100) NOT NULL,
+  `commentPic`  VARCHAR(255) NOT NULL DEFAULT 'profile0.png',
+  `commentTime` TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`commentId`),
+  KEY `idx_blogfeedback_blog` (`blogId`),
+  CONSTRAINT `fk_blogfeedback_blog` FOREIGN KEY (`blogId`) REFERENCES `blogdata` (`blogId`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Indexes for table `blogdata`
---
-ALTER TABLE `blogdata`
-  ADD PRIMARY KEY (`blogId`);
+-- Farmers and buyers have separate id ranges, so a like is identified by
+-- (blog, role, user id). The original table could mix them up.
+CREATE TABLE `likedata` (
+  `blogId`     INT                    NOT NULL,
+  `userRole`   ENUM('farmer','buyer') NOT NULL,
+  `blogUserId` INT                    NOT NULL,
+  PRIMARY KEY (`blogId`, `userRole`, `blogUserId`),
+  CONSTRAINT `fk_likedata_blog` FOREIGN KEY (`blogId`) REFERENCES `blogdata` (`blogId`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Indexes for table `buyer`
---
-ALTER TABLE `buyer`
-  ADD PRIMARY KEY (`bid`),
-  ADD UNIQUE KEY `bid` (`bid`);
+-- ----------------------------------------------------------------------------
+-- Demo data   (password for both demo users is  Demo@1234)
+-- ----------------------------------------------------------------------------
 
---
--- Indexes for table `farmer`
---
-ALTER TABLE `farmer`
-  ADD PRIMARY KEY (`fid`),
-  ADD UNIQUE KEY `fid` (`fid`);
+INSERT INTO `farmer` (`fid`, `fname`, `fusername`, `fpassword`, `femail`, `fmobile`, `faddress`) VALUES
+(1, 'Demo Farmer', 'demo_farmer', '$2y$10$J.0zOZjjpPEt6oKjgwagcu4YLU1sRFBvP83rXf9IfX5EMLGfATALy', 'demo.farmer@example.com', '9800000001', 'Ward 5, Biratnagar, Morang');
 
---
--- Indexes for table `fproduct`
---
-ALTER TABLE `fproduct`
-  ADD PRIMARY KEY (`pid`);
+INSERT INTO `buyer` (`bid`, `bname`, `busername`, `bpassword`, `bemail`, `bmobile`, `baddress`) VALUES
+(1, 'Demo Buyer', 'demo_buyer', '$2y$10$J.0zOZjjpPEt6oKjgwagcu4YLU1sRFBvP83rXf9IfX5EMLGfATALy', 'demo.buyer@example.com', '9800000002', 'Ward 3, Biratnagar, Morang');
 
---
--- Indexes for table `likedata`
---
-ALTER TABLE `likedata`
-  ADD KEY `blogId` (`blogId`),
-  ADD KEY `blogUserId` (`blogUserId`);
+INSERT INTO `fproduct` (`pid`, `fid`, `product`, `pcat`, `pinfo`, `price`, `unit`, `pimage`, `picStatus`) VALUES
+(1,  1, 'Mango',       'Fruit',     'Sweet, juicy mangoes picked at the peak of ripeness. Grown without waxing or artificial ripening.', 180.00, 'kg',    'mango13.JPG',      1),
+(2,  1, 'Banana',      'Fruit',     'Naturally ripened bananas, straight from our grove. Perfect for the whole family.',               120.00, 'dozen', 'banana12.JPG',     1),
+(3,  1, 'Green Apple', 'Fruit',     'Crisp, tangy green apples with a clean finish. Great for snacking and baking.',                    220.00, 'kg',    'greenApple.JPG',   1),
+(4,  1, 'Sapota',      'Fruit',     'Soft, honey-sweet sapota (chikoo), harvested ripe and ready to eat.',                              130.00, 'kg',    'Sapota5.jpg',      1),
+(5,  1, 'Ladyfinger',  'Vegetable', 'Tender, fresh-picked okra. Harvested in the morning and delivered the same day.',                   90.00,  'kg',    'Ladyfinger12.jpg', 1),
+(6,  1, 'Brinjal',     'Vegetable', 'Small, glossy brinjal with thin skin. Ideal for curries and roasting.',                              70.00,  'kg',    'brinjal.JPG',      1),
+(7,  1, 'Potato',      'Vegetable', 'Firm, earthy potatoes that store well. Sorted by size and washed before packing.',                   45.00,  'kg',    'potato12.JPG',     1),
+(8,  1, 'Mushroom',    'Vegetable', 'Fresh button mushrooms grown in a clean, controlled shed. Best used within three days.',             320.00, 'kg',    'mushroom12.JPG',   1),
+(9,  1, 'Bajra',       'Grains',    'Whole pearl millet, cleaned and sun-dried. A hardy, nutritious staple grain.',                       60.00,  'kg',    'Bajra4.jpg',       1),
+(10, 1, 'Wheat',       'Grains',    'Clean, sun-dried wheat grain from this season''s harvest.',                                          55.00,  'kg',    'wheat2.JPG',       1),
+(11, 1, 'Rice',        'Grains',    'Long-grain rice, cleaned and sorted. Light, fluffy and aromatic once cooked.',                       85.00,  'kg',    'rice.JPG',         1),
+(12, 1, 'Masoor Dal',  'Grains',    'Whole masoor lentils, sorted by hand. Cooks quickly and is rich in protein.',                       150.00, 'kg',    'masoor.JPG',       1);
 
---
--- Indexes for table `transaction`
---
-ALTER TABLE `transaction`
-  ADD PRIMARY KEY (`tid`);
+INSERT INTO `blogdata` (`blogId`, `blogUser`, `blogTitle`, `blogContent`, `likes`) VALUES
+(1, 'demo_farmer', 'Welcome to the KISAN blog',
+ 'This is the place for farmers and buyers to share tips, seasonal advice and stories from the field.\r\n\r\nWhat is growing well on your farm this month? Write a post and tell us.', 1);
 
---
--- AUTO_INCREMENT for dumped tables
---
+INSERT INTO `blogfeedback` (`blogId`, `comment`, `commentUser`, `commentPic`) VALUES
+(1, 'Great idea! Looking forward to reading more from local farmers.', 'demo_buyer', 'profile0.png');
 
---
--- AUTO_INCREMENT for table `blogdata`
---
-ALTER TABLE `blogdata`
-  MODIFY `blogId` int(10) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
---
--- AUTO_INCREMENT for table `buyer`
---
-ALTER TABLE `buyer`
-  MODIFY `bid` int(100) NOT NULL AUTO_INCREMENT;
---
--- AUTO_INCREMENT for table `farmer`
---
-ALTER TABLE `farmer`
-  MODIFY `fid` int(255) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
---
--- AUTO_INCREMENT for table `fproduct`
---
-ALTER TABLE `fproduct`
-  MODIFY `pid` int(255) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
---
--- AUTO_INCREMENT for table `transaction`
---
-ALTER TABLE `transaction`
-  MODIFY `tid` int(10) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
---
--- Constraints for dumped tables
---
+INSERT INTO `likedata` (`blogId`, `userRole`, `blogUserId`) VALUES
+(1, 'buyer', 1);
 
---
--- Constraints for table `buyer`
---
-ALTER TABLE `buyer`
-  ADD CONSTRAINT `buyer_ibfk_1` FOREIGN KEY (`bid`) REFERENCES `farmer` (`fid`);
-
---
--- Constraints for table `likedata`
---
-ALTER TABLE `likedata`
-  ADD CONSTRAINT `likedata_ibfk_1` FOREIGN KEY (`blogId`) REFERENCES `blogdata` (`blogId`);
-
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+INSERT INTO `review` (`pid`, `name`, `rating`, `comment`) VALUES
+(1, 'Demo Buyer', 5, 'Very sweet and fresh. Packed well and arrived on time.'),
+(1, 'Demo Buyer', 4, 'Great flavour. A couple were slightly overripe, but overall very happy.');

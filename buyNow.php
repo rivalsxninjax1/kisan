@@ -1,106 +1,141 @@
 <?php
-	session_start();
-	require 'db.php';
-    $pid = $_GET['pid'];
-    if($_SERVER['REQUEST_METHOD'] == "POST")
-    {
-        $name = $_POST['name'];
-        $city = $_POST['city'];
-        $mobile = $_POST['mobile'];
-        $email = $_POST['email'];
-        $pincode = $_POST['pincode'];
-        $addr = $_POST['addr'];
-        $bid = $_SESSION['id'];
+require __DIR__ . '/includes/bootstrap.php';
 
-        $sql = "INSERT INTO transaction (bid, pid, name, city, mobile, email, pincode, addr)
-                VALUES ('$bid', '$pid', '$name', '$city', '$mobile', '$email', '$pincode', '$addr')";
-        $result = mysqli_query($conn, $sql);
-        if($result)
-        {
-            $_SESSION['message'] = "Order Succesfully placed! <br /> Thanks for shopping with us!!!";
-            header('Location: Login/success.php');
-        }
-        else {
-            echo "error";
-            // echo $result->mysqli_error(); (correcteed it)
-            //$_SESSION['message'] = "Sorry!<br />Order was not placed";
-            header('Location: Login/error.php');
-        }
+require_role('buyer');
+$user = current_user();
+
+$pid = is_post() ? (int) post_str('pid') : get_int('pid');
+$product = $pid > 0 ? db_row(
+    'SELECT p.*, f.fname FROM fproduct p JOIN farmer f ON f.fid = p.fid WHERE p.pid = ?',
+    'i',
+    [$pid]
+) : null;
+
+if (!$product) {
+    flash('error', 'That product could not be found.');
+    redirect('market.php');
+}
+
+$errors = [];
+$old = [
+    'name'    => $user['name'],
+    'city'    => '',
+    'mobile'  => $user['mobile'],
+    'email'   => $user['email'],
+    'pincode' => '',
+    'addr'    => $user['address'],
+];
+
+if (is_post()) {
+    csrf_check();
+    foreach ($old as $key => $unused) {
+        $old[$key] = post_str($key);
     }
+
+    if (str_len($old['name']) < 2 || str_len($old['name']) > 100) {
+        $errors[] = 'Please enter your full name.';
+    }
+    if ($old['city'] === '' || str_len($old['city']) > 100) {
+        $errors[] = 'Please enter your city.';
+    }
+    if (!valid_mobile($old['mobile'])) {
+        $errors[] = 'Mobile number must be exactly 10 digits.';
+    }
+    if (!filter_var($old['email'], FILTER_VALIDATE_EMAIL)) {
+        $errors[] = 'Please enter a valid email address.';
+    }
+    if ($old['pincode'] === '' || str_len($old['pincode']) > 20) {
+        $errors[] = 'Please enter your postal / pin code.';
+    }
+    if (str_len($old['addr']) < 3 || str_len($old['addr']) > 255) {
+        $errors[] = 'Please enter your delivery address.';
+    }
+
+    if (!$errors) {
+        db_run(
+            'INSERT INTO `transaction` (bid, pid, name, city, mobile, email, pincode, addr) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            'iissssss',
+            [$user['id'], $pid, $old['name'], $old['city'], $old['mobile'], $old['email'], $old['pincode'], $old['addr']]
+        );
+        // The product has been ordered, so it no longer needs to sit in the Jhola.
+        db_run('DELETE FROM mycart WHERE bid = ? AND pid = ?', 'ii', [$user['id'], $pid]);
+
+        flash('success', 'Order placed! The farmer will contact you to arrange delivery.');
+        redirect('orders.php');
+    }
+}
+
+$pageTitle = 'Place your order';
+$active    = 'market';
+require __DIR__ . '/includes/header.php';
 ?>
 
+<section class="page-head">
+    <div class="wrap">
+        <h1>Delivery details</h1>
+        <p class="lead muted">Tell <?= e($product['fname']) ?> where to send your order.</p>
+    </div>
+</section>
 
-<!DOCTYPE html>
-<html>
-<head>
-	<title>KISAN: Transaction</title>
-	<meta lang="eng">
-	<meta charset="UTF-8">
-		<title>AgroCulture</title>
-		<meta http-equiv="content-type" content="text/html; charset=utf-8" />
-		<meta name="description" content="" />
-		<meta name="keywords" content="" />
-		<link href="bootstrap\css\bootstrap.min.css" rel="stylesheet">
-		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-        <script src="bootstrap\js\bootstrap.min.js"></script>
-		<!--[if lte IE 8]><script src="css/ie/html5shiv.js"></script><![endif]-->
-		<script src="js/jquery.min.js"></script>
-		<script src="js/skel.min.js"></script>
-		<script src="js/skel-layers.min.js"></script>
-		<script src="js/init.js"></script>
-		<link rel="stylesheet" href="Blog/commentBox.css" />
-		<noscript>
-			<link rel="stylesheet" href="css/skel.css" />
-			<link rel="stylesheet" href="css/style.css" />
-			<link rel="stylesheet" href="css/style-xlarge.css" />
-		</noscript>
-</head>
-<body>
+<section class="section-tight">
+    <div class="wrap">
+        <div class="split">
+            <div class="card card-pad">
+                <?php if ($errors): ?>
+                    <div class="form-errors" role="alert">
+                        <strong>Please fix the following:</strong>
+                        <ul>
+                            <?php foreach ($errors as $msg): ?>
+                                <li><?= e($msg) ?></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                <?php endif; ?>
 
-    <?php
-        require 'menu.php';
-    ?>
-
-
-    <section id="main" class="wrapper" >
-        <div class="container">
-        <center>
-                <h2>Transaction Details</h2>
-        </center>
-        <section id="two" class="wrapper style2 align-center">
-        <div class="container">
-            <center>
-                <form method="post" action="buyNow.php?pid=<?= $pid; ?>" style="border: 1px solid black; padding: 15px;">
-                    <center>
-                    <div class="row uniform">
-                        <div class="6u 12u$(xsmall)">
-                            <input type="text" name="name" id="name" value="" placeholder="Name" required/>
+                <form method="post" action="buyNow.php?pid=<?= (int) $pid ?>" novalidate>
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="pid" value="<?= (int) $pid ?>">
+                    <div class="form-grid">
+                        <div class="field">
+                            <label for="name">Full name</label>
+                            <input type="text" id="name" name="name" value="<?= e($old['name']) ?>" autocomplete="name" required>
                         </div>
-                        <div class="6u 12u$(xsmall)">
-                            <input type="text" name="city" id="city" value="" placeholder="City" required/>
+                        <div class="field">
+                            <label for="mobile">Mobile number</label>
+                            <input type="text" id="mobile" name="mobile" value="<?= e($old['mobile']) ?>" inputmode="numeric" maxlength="10" autocomplete="tel" required>
+                        </div>
+                        <div class="field span-2">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" name="email" value="<?= e($old['email']) ?>" autocomplete="email" required>
+                        </div>
+                        <div class="field">
+                            <label for="city">City</label>
+                            <input type="text" id="city" name="city" value="<?= e($old['city']) ?>" autocomplete="address-level2" required>
+                        </div>
+                        <div class="field">
+                            <label for="pincode">Postal / pin code</label>
+                            <input type="text" id="pincode" name="pincode" value="<?= e($old['pincode']) ?>" autocomplete="postal-code" required>
+                        </div>
+                        <div class="field span-2">
+                            <label for="addr">Delivery address</label>
+                            <input type="text" id="addr" name="addr" value="<?= e($old['addr']) ?>" autocomplete="street-address" required>
                         </div>
                     </div>
-                    <div class="row uniform">
-                        <div class="6u 12u$(xsmall)">
-                            <input type="text" name="mobile" id="mobile" value="" placeholder="Mobile Number" required/>
-                        </div>
+                    <button type="submit" class="btn btn-primary btn-lg">Confirm order</button>
+                    <a class="btn btn-ghost btn-lg" href="review.php?pid=<?= (int) $pid ?>">Cancel</a>
+                </form>
+            </div>
 
-                        <div class="6u 12u$(xsmall)">
-                            <input type="email" name="email" id="email" value="" placeholder="Email" required/>
-                        </div>
-                    </div>
-                    <div class="row uniform">
-                        <div class="4u 12u$(xsmall)">
-                            <input type="text" name="pincode" id="pincode" value="" placeholder="Pincode" required/>
-                        </div>
-                        <div class="8u 12u$(xsmall)">
-                            <input type="text" name="addr" id="addr" value="" placeholder="Address" style="width:80%" required/>
-                        </div>
-                    </div>
-                    <br />
-                    <p>
-                        <input type="submit" value="Confirm Order" />
-                    </p>
-                </center>
-            </form>
-        </fieldset>
+            <aside class="card summary">
+                <img src="<?= e(product_image($product['pimage'])) ?>" alt="<?= e($product['product']) ?>">
+                <h3><?= e($product['product']) ?></h3>
+                <div class="summary-row"><span>Seller</span><span><?= e($product['fname']) ?></span></div>
+                <div class="summary-row"><span>Category</span><span><?= e($product['pcat']) ?></span></div>
+                <div class="summary-row summary-total"><span>Price</span><span><?= e(money($product['price'])) ?> / <?= e($product['unit']) ?></span></div>
+                <p class="muted small" style="margin:1rem 0 0">The farmer will contact you to confirm the quantity and delivery.</p>
+            </aside>
+        </div>
+    </div>
+</section>
+
+<?php require __DIR__ . '/includes/footer.php'; ?>

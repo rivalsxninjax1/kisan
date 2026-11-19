@@ -1,131 +1,157 @@
 <?php
-    session_start();
+require __DIR__ . '/includes/bootstrap.php';
 
-	if(!isset($_SESSION['logged_in']) OR $_SESSION['logged_in'] != 1)
-	{
-		$_SESSION['message'] = "You have to Login to view this page!";
-		header("Location: Login/error.php");
-	}
+require_login();
+$user = current_user();
+
+// Farmers can delete their own products.
+if (is_post() && post_str('action') === 'delete_product') {
+    csrf_check();
+    require_role('farmer');
+    $pid   = (int) post_str('pid');
+    $owned = db_row('SELECT pid, pimage FROM fproduct WHERE pid = ? AND fid = ?', 'ii', [$pid, $user['id']]);
+
+    if (!$owned) {
+        flash('error', 'You can only delete your own products.');
+    } elseif ((int) db_val('SELECT COUNT(*) FROM `transaction` WHERE pid = ?', 'i', [$pid]) > 0) {
+        flash('error', 'This product already has orders, so it cannot be deleted.');
+    } else {
+        db_run('DELETE FROM fproduct WHERE pid = ? AND fid = ?', 'ii', [$pid, $user['id']]);
+        if (preg_match('/^p\d+_[0-9a-f]{16}\.(jpg|png)$/', (string) $owned['pimage'])) {
+            @unlink(__DIR__ . '/productimages/' . basename($owned['pimage']));
+        }
+        flash('success', 'Product deleted.');
+    }
+    redirect('profileView.php#products');
+}
+
+$isFarmer = $user['role'] === 'farmer';
+$products = [];
+$orders   = [];
+$orderCount = 0;
+$avgRating  = null;
+
+if ($isFarmer) {
+    $products = db_all(
+        'SELECT pid, product, pcat, price, unit, pimage FROM fproduct WHERE fid = ? ORDER BY pid DESC',
+        'i',
+        [$user['id']]
+    );
+    $orderCount = (int) db_val(
+        'SELECT COUNT(*) FROM `transaction` t JOIN fproduct p ON p.pid = t.pid WHERE p.fid = ?',
+        'i',
+        [$user['id']]
+    );
+    $avg = db_val(
+        'SELECT AVG(r.rating) FROM review r JOIN fproduct p ON p.pid = r.pid WHERE p.fid = ?',
+        'i',
+        [$user['id']]
+    );
+    $avgRating = $avg !== null ? (float) $avg : null;
+} else {
+    $orderCount = (int) db_val('SELECT COUNT(*) FROM `transaction` WHERE bid = ?', 'i', [$user['id']]);
+}
+
+$pageTitle = 'My profile';
+$active    = 'profile';
+require __DIR__ . '/includes/header.php';
 ?>
 
-<!DOCTYPE HTML>
-
-<html lang="en">
-    <head>
-        <title>Profile: <?php echo $_SESSION['Username']; ?></title>
-        <meta charset="utf-8" />
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link href="bootstrap\css\bootstrap.min.css" rel="stylesheet">
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-        <script src="bootstrap\js\bootstrap.min.js"></script>
-        <meta name="description" content="" />
-		<meta name="keywords" content="" />
-		<!--[if lte IE 8]><script src="css/ie/html5shiv.js"></script><![endif]-->
-		<link rel="stylesheet" href="login.css"/>
-		<script src="js/jquery.min.js"></script>
-		<script src="js/skel.min.js"></script>
-		<script src="js/skel-layers.min.js"></script>
-		<script src="js/init.js"></script>
-		<link rel="stylesheet" href="css/skel.css" />
-		<link rel="stylesheet" href="css/style.css" />
-		<link rel="stylesheet" href="css/style-xlarge.css" />
-
-    </head>
-
-
-    <body>
-
-        <?php
-            require 'menu.php';
-        ?>
-
-        <section id="one" class="wrapper style1 align">
-            <div class="inner">
-                <div class="box">
-                <header>
-                    <center>
-                    <span><img src="<?php echo 'images/profileImages/'.$_SESSION['picName'].'?'.mt_rand(); ?>" class="image-circle" class="img-responsive" height="200%"></span>
-                    <br>
-                    <h2><?php echo $_SESSION['Name'];?></h2>
-                    <h4 style="color: black;"><?php echo $_SESSION['Username'];?></h4>
-                    <br>
-                </center>
-                </header>
-<div style="justify-content: center; flex-flow: row; display: flex;">
-    <div style="width: 20%; border-radius: 5px; justify-content: center; flex-flow: column; align-items: center; display: flex;">
-                                   <div class="3u 12u$(large)" style="padding: 5px; "> <a href="Profile/changePass.php" class="btn btn-danger" style="text-decoration: none;">Change Password</a> </div>
-                                   <div class="3u 12u$(large)" style="padding: 5px; "> <a href="profileEdit.php" class="btn btn-danger" style="text-decoration: none;">Edit Profile</a> </div>
-                                   <div class="3u 12u$(xsmall)" style="padding: 5px; "> <a href="uploadProduct.php" class="btn btn-danger" style="text-decoration: none;">Upload Product</a> </div>
-                                   <div class="3u 12u$(large)" style="padding: 5px; "> <a href="Login/logout.php" class="btn btn-danger" style="text-decoration: none;">LOG OUT</a> </div>
+<section class="profile-hero">
+    <div class="wrap profile-head">
+        <img class="avatar avatar-lg" src="<?= e(avatar_url($user['pic'])) ?>" alt="Profile photo">
+        <div>
+            <span class="chip chip-sun"><?= $isFarmer ? 'Farmer' : 'Buyer' ?></span>
+            <h1><?= e($user['name']) ?></h1>
+            <p class="muted" style="margin:0">@<?= e($user['username']) ?></p>
+        </div>
+        <div class="profile-actions">
+            <?php if ($isFarmer): ?>
+                <a class="btn btn-primary" href="uploadProduct.php"><i class="fa fa-plus" aria-hidden="true"></i> List a product</a>
+            <?php else: ?>
+                <a class="btn btn-primary" href="myCart.php"><i class="fa fa-shopping-cart" aria-hidden="true"></i> My Jhola</a>
+            <?php endif; ?>
+            <a class="btn btn-ghost" href="orders.php"><?= $isFarmer ? 'Orders received' : 'My orders' ?> (<?= $orderCount ?>)</a>
+            <a class="btn btn-ghost" href="profileEdit.php"><i class="fa fa-pencil" aria-hidden="true"></i> Edit profile</a>
+        </div>
     </div>
-    <div style="width: 50%;">
-                            <b><font size="+1" color="black">Email ID : </font></b>
-                            <div style="background-color: black; border-radius: 5px; padding: 5px;"><font size="+1"><?php echo $_SESSION['Email'];?></font> <br></div> 
-                            <b><font size="+1" color="black">RATINGS : </font></b>
-                            <div style="background-color: black; border-radius: 5px; padding: 5px;"><font size="+1"><?php echo $_SESSION['Rating'];?></font><br></div>
-                            <b><font size="+1" color="black">Mobile No : </font></b>
-                            <div style="background-color: black; border-radius: 5px; padding: 5px;"><font size="+1"><?php echo $_SESSION['Mobile'];?></font><br></div>
-                            <b><font size="+1" color="black">ADDRESS : </font></b>
-                            <div style="background-color: black; border-radius: 5px; padding: 5px;"><font size="+1"><?php echo $_SESSION['Addr'];?></font><br></div>
-    </div>
-</div>
-<!--removed things from here <div class="row">
-                        <div class="col-sm-3">
-                            <b><font size="+1" color="black">RATINGS : </font></b>
-                            <font size="+1"><?php echo $_SESSION['Rating'];?></font>
-                        </div>
-                        <div class="col-sm-3">
-                            <b><font size="+1" color="black">Email ID : </font></b>
-                            <font size="+1"><?php echo $_SESSION['Email'];?></font>
-                        </div>
-                        <div class="col-sm-3"></div>
-                    </div>
-                    <br />
-                    <div class="row">
-                        <div class="col-sm-3"></div>
-                        <div class="col-sm-3">
-                            <b><font size="+1" color="black">Mobile No : </font></b>
-                            <font size="+1"><?php echo $_SESSION['Mobile'];?></font>
-                        </div>
-                        <div class="col-sm-3">
-                            <b><font size="+1" color="black">ADDRESS : </font></b>
-                            <font size="+1"><?php echo $_SESSION['Addr'];?></font>
-                        </div>
-                        <div class="col-sm-3"></div>
-                    </div>
-                        <div class="12u$">
-                            <center>
-                                <div class="row uniform">
-                                    <div class="3u 12u$(large)">
-                                        <a href="changePassPage.php" class="btn btn-danger" style="text-decoration: none;">Change Password</a>
-                                    </div>
-                                    <div class="3u 12u$(large)">
-                                        <a href="profileEdit.php" class="btn btn-danger" style="text-decoration: none;">Edit Profile</a>
-                                    </div>
-                                    <div class="3u 12u$(xsmall)">
-            							<a href="uploadProduct.php" class="btn btn-danger" style="text-decoration: none;">Upload Product</a>
-            						</div>
-                                    <div class="3u 12u$(large)">
-                                        <a href="Login/logout.php" class="btn btn-danger" style="text-decoration: none;">LOG OUT</a>
-                                    </div>
-                                </div>
-                            </center>
-                        </div>
-                    </div> to here  -->
-                </div>
+</section>
+
+<section class="section-tight" style="padding-top:2.5rem">
+    <div class="wrap">
+        <div class="info-grid">
+            <div class="card info-card">
+                <span class="info-label"><i class="fa fa-envelope" aria-hidden="true"></i> Email</span>
+                <span class="info-value"><?= e($user['email']) ?></span>
             </div>
-        </section>
+            <div class="card info-card">
+                <span class="info-label"><i class="fa fa-phone" aria-hidden="true"></i> Mobile</span>
+                <span class="info-value"><?= e($user['mobile']) ?></span>
+            </div>
+            <div class="card info-card">
+                <span class="info-label"><i class="fa fa-map-marker" aria-hidden="true"></i> Address</span>
+                <span class="info-value"><?= e($user['address']) ?></span>
+            </div>
+            <?php if ($isFarmer): ?>
+                <div class="card info-card">
+                    <span class="info-label"><i class="fa fa-star" aria-hidden="true"></i> Average rating</span>
+                    <span class="info-value">
+                        <?php if ($avgRating !== null): ?>
+                            <?= stars_html($avgRating) ?> <?= e(number_format($avgRating, 1)) ?>
+                        <?php else: ?>
+                            <span class="muted">No reviews yet</span>
+                        <?php endif; ?>
+                    </span>
+                </div>
+            <?php endif; ?>
+        </div>
 
-        <!-- Scripts -->
-            <script src="assets/js/jquery.min.js"></script>
-            <script src="assets/js/jquery.scrolly.min.js"></script>
-            <script src="assets/js/jquery.scrollex.min.js"></script>
-            <script src="assets/js/skel.min.js"></script>
-            <script src="assets/js/util.js"></script>
-            <script src="assets/js/main.js"></script>
+        <?php if ($isFarmer): ?>
+            <div id="products">
+                <div class="row-between" style="margin-bottom:1.25rem">
+                    <h2 style="margin:0">My products</h2>
+                    <a class="btn btn-primary btn-sm" href="uploadProduct.php"><i class="fa fa-plus" aria-hidden="true"></i> Add product</a>
+                </div>
 
+                <?php if ($products): ?>
+                    <div class="my-products">
+                        <?php foreach ($products as $p): ?>
+                            <article class="card my-product">
+                                <a href="review.php?pid=<?= (int) $p['pid'] ?>"><img src="<?= e(product_image($p['pimage'])) ?>" alt=""></a>
+                                <div>
+                                    <h3><a href="review.php?pid=<?= (int) $p['pid'] ?>" style="color:inherit;text-decoration:none"><?= e($p['product']) ?></a></h3>
+                                    <p class="muted small" style="margin:0"><?= e($p['pcat']) ?> &middot; <?= e(money($p['price'])) ?> / <?= e($p['unit']) ?></p>
+                                </div>
+                                <div class="row-actions">
+                                    <a class="btn btn-ghost btn-sm" href="uploadProduct.php?pid=<?= (int) $p['pid'] ?>">Edit</a>
+                                    <form method="post" action="profileView.php" class="inline-form" data-confirm="Delete &quot;<?= e($p['product']) ?>&quot;? This cannot be undone.">
+                                        <?= csrf_field() ?>
+                                        <input type="hidden" name="action" value="delete_product">
+                                        <input type="hidden" name="pid" value="<?= (int) $p['pid'] ?>">
+                                        <button type="submit" class="btn btn-danger btn-sm"><i class="fa fa-trash-o" aria-hidden="true"></i> Delete</button>
+                                    </form>
+                                </div>
+                            </article>
+                        <?php endforeach; ?>
+                    </div>
+                <?php else: ?>
+                    <div class="empty">
+                        <i class="fa fa-leaf" aria-hidden="true"></i>
+                        <h3>You have not listed anything yet</h3>
+                        <p>Add your first product and it will appear on the Digital Bazar straight away.</p>
+                        <a class="btn btn-primary" href="uploadProduct.php">List a product</a>
+                    </div>
+                <?php endif; ?>
+            </div>
+        <?php else: ?>
+            <div class="empty">
+                <i class="fa fa-shopping-cart" aria-hidden="true"></i>
+                <h3>Ready to shop?</h3>
+                <p>Browse fresh produce from farmers and add what you like to your Jhola.</p>
+                <a class="btn btn-primary" href="market.php">Browse the Bazar</a>
+            </div>
+        <?php endif; ?>
+    </div>
+</section>
 
-
-    </body>
-</html>
+<?php require __DIR__ . '/includes/footer.php'; ?>
